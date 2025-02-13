@@ -1,6 +1,20 @@
-# AutoCheckin
+# <div align="center">AutoCheckin <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jameshaworthcs/AutoCheckin/refs/heads/main/public/favicon-white.svg" width="25" height="25"><img src="https://raw.githubusercontent.com/jameshaworthcs/AutoCheckin/refs/heads/main/public/favicon.svg" width="25" height="25" alt="AutoCheckin Logo"></picture></div>
 
-A Flask-based REST API that provides an session handling and checkins for the CheckOut AutoCheckin system.
+A Flask-based REST API that provides a session handling and checkins for the CheckOut AutoCheckin system.
+
+## Table of Contents
+- [Features](#features)
+- [Setup](#setup)
+- [Static Files](#static-files)
+- [Development Server](#development-server)
+- [Production Deployment](#production-deployment)
+- [API Endpoints](#api-endpoints)
+  - [Root Endpoint](#root-endpoint)
+  - [Authentication Test Endpoint](#authentication-test-endpoint)
+  - [Status Endpoints](#status-endpoints)
+  - [Session Management Endpoints](#session-management-endpoints)
+  - [User Management Endpoints](#user-management-endpoints)
+- [Error Handling](#error-handling)
 
 ## Features
 
@@ -10,6 +24,7 @@ A Flask-based REST API that provides an session handling and checkins for the Ch
 - Proper error handling
 - Environment configuration
 - Production-ready with Gunicorn support
+- Public static file serving
 
 ## Setup
 
@@ -35,6 +50,15 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 Edit `.env` file with your specific configuration. Make sure to set the `CHECKOUT_API_KEY` for authentication testing.
+
+## Static Files
+
+The `/public` directory is used to serve static files without authentication. This is useful for:
+- Favicons (`favicon.ico`, `favicon.svg`)
+- Images
+- Other public assets
+
+To serve a static file, simply place it in the `public` directory and access it at the root URL.
 
 ## Development Server
 

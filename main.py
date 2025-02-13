@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory, request
 from api.test_auth import auth_bp
 from api.utils import create_response
 from api.middleware import check_api_key
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public', static_url_path='')
 
 # Start connection monitor in background thread
 monitor_thread = threading.Thread(target=connection_monitor, daemon=True)
@@ -20,6 +20,12 @@ monitor_thread.start()
 # Register global authentication middleware
 @app.before_request
 def authenticate():
+    # Skip authentication for static files
+    if request.path.startswith('/'):
+        path = request.path[1:]  # Remove leading slash
+        if os.path.exists(os.path.join(app.static_folder, path)):
+            return None
+    
     result = check_api_key()
     if result is not None:
         return result
@@ -97,6 +103,16 @@ def get_state():
             "stored_data": state.data
         }
     )
+
+# Serve favicon.ico from public folder
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(app.static_folder, 'favicon.ico')
+
+# Serve favicon.svg from public folder
+@app.route('/favicon.svg')
+def favicon_svg():
+    return send_from_directory(app.static_folder, 'favicon.svg')
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

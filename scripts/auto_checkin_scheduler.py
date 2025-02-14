@@ -10,8 +10,8 @@ from scripts.session_refresh import refresh_session_token, get_utc_timestamp
 # Scheduler configuration constants
 INITIAL_DELAY_SECONDS = 5
 RUN_INITIAL_CYCLE = False
-MIN_MS_BETWEEN_RUNS = 36.00  # 3.6 seconds for testing (would be 3600000 for 1 hour in production)
-MAX_MS_BETWEEN_RUNS = 40.000  # 18 seconds for testing (would be 18000000 for 5 hours in production)
+MIN_MS_BETWEEN_RUNS = 3600  # 3.6 seconds for testing (would be 3600 for 1 hour in production)
+MAX_MS_BETWEEN_RUNS = 18000  # 18 seconds for testing (would be 18000 for 5 hours in production)
 MIN_USER_DELAY_MS = 0
 MAX_USER_DELAY_MS = 60  # 10 minutes max delay between users for stealth
 

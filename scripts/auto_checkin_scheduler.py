@@ -7,16 +7,20 @@ import os
 from api.state import state
 from scripts.session_refresh import refresh_session_token, get_utc_timestamp
 
-# Configuration
-INITIAL_DELAY_SECONDS = 5  # Initial delay after app starts
-RUN_INITIAL_CYCLE = True   # Set to False to skip initial cycle and wait for next scheduled run
+# Scheduler configuration constants
+INITIAL_DELAY_SECONDS = 5
+RUN_INITIAL_CYCLE = True
 MIN_HOURS_BETWEEN_RUNS = 1
 MAX_HOURS_BETWEEN_RUNS = 5
 MIN_USER_DELAY_MS = 0
-MAX_USER_DELAY_MS = 600000  # 10 minutes
+MAX_USER_DELAY_MS = 600000  # 10 minutes max delay between users for stealth
 
 def get_users() -> List[Dict[str, Any]]:
-    """Get all users from stored data"""
+    """Retrieve registered users from the global state.
+    
+    Returns:
+        List[Dict[str, Any]]: List of user dictionaries containing email and session tokens.
+    """
     if os.getenv('FLASK_DEBUG') == '1':
         print("\n[DEBUG] Fetching users from stored data")
     
@@ -28,7 +32,11 @@ def get_users() -> List[Dict[str, Any]]:
     return users
 
 async def run_autocheckin(user: Dict[str, Any]) -> None:
-    """Run auto checkin for a single user"""
+    """Process auto checkin for a single user by refreshing their session token.
+    
+    Args:
+        user: Dictionary containing user data including email and checkin token.
+    """
     email = user.get('email')
     token = user.get('checkintoken')
     
@@ -40,10 +48,7 @@ async def run_autocheckin(user: Dict[str, Any]) -> None:
     if os.getenv('FLASK_DEBUG') == '1':
         print(f"[DEBUG] Running auto checkin for {email}")
     
-    # Attempt to refresh the session token
     new_token = refresh_session_token(email, token)
-    
-    # Update the user's stored data
     users = state.get_data('autoCheckinUsers') or []
     current_time = get_utc_timestamp()
     
@@ -69,19 +74,21 @@ async def run_autocheckin(user: Dict[str, Any]) -> None:
     state.set_data('autoCheckinUsers', users)
 
 async def start_autocheckin_cycle() -> None:
-    """Main auto checkin cycle function"""
+    """Main scheduler loop that processes users at random intervals.
+    
+    Implements a stealth-based approach:
+    1. Randomizes the delay between processing cycles
+    2. Shuffles user order each cycle
+    3. Adds random delays between processing each user
+    """
     if os.getenv('FLASK_DEBUG') == '1':
         print("\n[DEBUG] Starting auto checkin scheduler")
         print(f"[DEBUG] Initial delay: {INITIAL_DELAY_SECONDS} seconds")
         print(f"[DEBUG] Run initial cycle: {RUN_INITIAL_CYCLE}")
     
-    # Initial delay after app starts
     await asyncio.sleep(INITIAL_DELAY_SECONDS)
     
-    # Skip first cycle if configured
     if not RUN_INITIAL_CYCLE:
-        if os.getenv('FLASK_DEBUG') == '1':
-            print("[DEBUG] Skipping initial cycle")
         next_run_hours = random.randint(MIN_HOURS_BETWEEN_RUNS, MAX_HOURS_BETWEEN_RUNS)
         next_run_seconds = next_run_hours * 3600
         if os.getenv('FLASK_DEBUG') == '1':
@@ -92,14 +99,12 @@ async def start_autocheckin_cycle() -> None:
         if os.getenv('FLASK_DEBUG') == '1':
             print("\n[DEBUG] Starting new auto checkin cycle")
         
-        # Get users and shuffle them
         users = get_users()
         random.shuffle(users)
         
         if os.getenv('FLASK_DEBUG') == '1':
             print(f"[DEBUG] Processing {len(users)} users")
         
-        # Process each user with random delay
         for user in users:
             delay_ms = random.randint(MIN_USER_DELAY_MS, MAX_USER_DELAY_MS)
             delay_sec = delay_ms / 1000
@@ -110,7 +115,6 @@ async def start_autocheckin_cycle() -> None:
             
             await run_autocheckin(user)
         
-        # Random delay before next cycle
         next_run_hours = random.randint(MIN_HOURS_BETWEEN_RUNS, MAX_HOURS_BETWEEN_RUNS)
         next_run_seconds = next_run_hours * 3600
         
@@ -119,13 +123,15 @@ async def start_autocheckin_cycle() -> None:
         await asyncio.sleep(next_run_seconds)
 
 async def start_scheduler() -> None:
-    """Start the auto checkin scheduler"""
+    """Entry point for the auto checkin scheduler.
+    
+    Runs continuously, restarting the cycle if an error occurs.
+    """
     try:
         await start_autocheckin_cycle()
     except Exception as e:
         if os.getenv('FLASK_DEBUG') == '1':
             print(f"[DEBUG] Error in auto checkin scheduler: {str(e)}")
-        # Continue running even if there's an error
         await start_scheduler()
 
 if __name__ == "__main__":

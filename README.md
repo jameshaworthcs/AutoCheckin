@@ -4,6 +4,7 @@ A Flask-based REST API that provides a session handling and checkins for the Che
 
 ## Table of Contents
 - [Features](#features)
+- [AutoCheckin Process](#autocheckin-process)
 - [Setup](#setup)
 - [Static Files](#static-files)
 - [Development Server](#development-server)
@@ -26,6 +27,38 @@ A Flask-based REST API that provides a session handling and checkins for the Che
 - Environment configuration
 - Production-ready with Gunicorn support
 - Public static file serving
+
+## AutoCheckin Process
+
+The AutoCheckin system operates in two modes:
+
+### 1. Scheduled Background Processing
+
+The system runs an intelligent background scheduler that:
+- Runs automatically at random intervals (between 1-5 hours) to avoid detection
+- Processes users in random order with random delays between each user (0-10 minutes)
+- For each user:
+  1. Refreshes their session token to maintain authentication
+  2. Updates their status in the system
+  3. Logs any issues or successes
+
+### 2. On-Demand Code Submission
+
+The system also provides immediate code submission through the `/api/v1/try-codes` endpoint:
+- Fetches and sorts available codes from CheckOut by reputation score
+- For each registered user:
+  1. Refreshes their session token and obtains CSRF token
+  2. Gets their current event schedule
+  3. For each event not marked as "Present":
+     - Tries available codes until one works
+     - Logs successful checkins back to CheckOut
+     - Moves to next event on success
+- Returns detailed statistics about the process:
+  - Total number of users processed
+  - Number of successful submissions
+  - Timestamp of the operation
+
+This dual-mode operation ensures both automated background processing and the ability to manually trigger checkins when needed.
 
 ## Setup
 

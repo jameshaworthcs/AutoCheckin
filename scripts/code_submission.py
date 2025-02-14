@@ -7,11 +7,13 @@ from api.checkout_client import CheckOutClient, CheckOutAPIError
 from scripts.session_refresh import refresh_session_token, log
 
 def get_codes() -> List[str]:
-    """
-    Get available codes from the CheckOut API
+    """Fetch and sort available checkin codes from the CheckOut API.
+    
+    Retrieves all available codes from active sessions and sorts them by reputation score,
+    which is based on successful usage count.
     
     Returns:
-        List[str]: List of checkin codes sorted by usage count
+        List[str]: List of checkin codes sorted by reputation score (most successful first).
     """
     if os.getenv('FLASK_DEBUG') == '1':
         print("\n[DEBUG] Fetching codes from CheckOut API")
@@ -23,20 +25,17 @@ def get_codes() -> List[str]:
         if os.getenv('FLASK_DEBUG') == '1':
             print("[DEBUG] Parsing response from CheckOut API")
         
-        # Handle forbidden response
         if response.get('status_code') == 403:
             if os.getenv('FLASK_DEBUG') == '1':
                 print("[DEBUG] Access forbidden")
             return []
             
-        # Check if we have any sessions
         session_count = response.get('sessionCount', 0)
         if not session_count:
             if os.getenv('FLASK_DEBUG') == '1':
                 print("[DEBUG] No active sessions found")
             return []
             
-        # Extract and sort codes from all sessions
         codes = []
         sessions = response.get('sessions', [])
         
@@ -47,10 +46,8 @@ def get_codes() -> List[str]:
             session_codes = session.get('codes', [])
             codes.extend(session_codes)
             
-        # Sort codes by count (most used first)
+        # Sort by reputation score (usage count)
         codes.sort(key=lambda x: x.get('count', 0), reverse=True)
-        
-        # Extract just the checkin codes
         sorted_checkin_codes = [str(code.get('checkinCode')) for code in codes]
         
         if os.getenv('FLASK_DEBUG') == '1':
@@ -64,17 +61,18 @@ def get_codes() -> List[str]:
         return []
 
 def try_code(event_id: str, code: str, session_token: str, csrf_token: str) -> bool:
-    """
-    Try a code for a specific event
+    """Attempt to use a checkin code for a specific event.
+    
+    Makes an authenticated request to the CheckOut API to submit a code for an event.
     
     Args:
         event_id: ID of the event to try the code for
-        code: Code to try
-        session_token: Current session token
-        csrf_token: CSRF token for the request
+        code: Checkin code to try
+        session_token: Current session token for authentication
+        csrf_token: CSRF token for request validation
         
     Returns:
-        bool: True if code was successful, False otherwise
+        bool: True if code was accepted, False if invalid or error occurred
     """
     if os.getenv('FLASK_DEBUG') == '1':
         print(f"\n[DEBUG] Trying code for event {event_id}")
@@ -104,13 +102,11 @@ def try_code(event_id: str, code: str, session_token: str, csrf_token: str) -> b
         if os.getenv('FLASK_DEBUG') == '1':
             print(f"[DEBUG] Response status code: {response.status_code}")
         
-        # Status code 422 indicates invalid code
-        if response.status_code == 422:
+        if response.status_code == 422:  # Invalid code
             if os.getenv('FLASK_DEBUG') == '1':
                 print("[DEBUG] Invalid code")
             return False
             
-        # Any other non-200 status code is an error
         if response.status_code != 200:
             if os.getenv('FLASK_DEBUG') == '1':
                 print(f"[DEBUG] Error response: {response.text}")
@@ -126,8 +122,12 @@ def try_code(event_id: str, code: str, session_token: str, csrf_token: str) -> b
         return False
 
 def try_codes_for_user(email: str, current_token: str) -> None:
-    """
-    Try all available codes for a user's events
+    """Process checkin codes for all unchecked events of a user.
+    
+    For each event where the user is not marked as present:
+    1. Tries each available code in order of reputation score
+    2. Stops trying codes for an event once one succeeds
+    3. Logs successful checkins to the system
     
     Args:
         email: User's email address
@@ -136,7 +136,6 @@ def try_codes_for_user(email: str, current_token: str) -> None:
     if os.getenv('FLASK_DEBUG') == '1':
         print(f"\n[DEBUG] Starting code submission for {email}")
     
-    # Get fresh session token and CSRF token
     result = refresh_session_token(email, current_token, get_csrf_and_events=True)
     if not result:
         if os.getenv('FLASK_DEBUG') == '1':
@@ -152,14 +151,12 @@ def try_codes_for_user(email: str, current_token: str) -> None:
     if os.getenv('FLASK_DEBUG') == '1':
         print(f"[DEBUG] Found {len(events)} events")
     
-    # Get available codes
     codes = get_codes()
     if not codes:
         if os.getenv('FLASK_DEBUG') == '1':
             print("[DEBUG] No codes available")
         return
         
-    # Try codes for each event
     for event in events:
         if event['status'] in ['Present', 'Present Late']:
             if os.getenv('FLASK_DEBUG') == '1':
@@ -178,11 +175,13 @@ def try_codes_for_user(email: str, current_token: str) -> None:
                 break
                 
 def try_codes_for_all_users() -> Dict[str, Any]:
-    """
-    Try codes for all users in stored data
+    """Process checkin codes for all registered users.
+    
+    Attempts to check in each user to their unchecked events using available codes.
+    Updates the global state with the results.
     
     Returns:
-        Dict[str, Any]: Result summary
+        Dict[str, Any]: Summary containing total users, processed count, and timestamp
     """
     if os.getenv('FLASK_DEBUG') == '1':
         print("\n[DEBUG] Starting code submission for all users")

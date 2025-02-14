@@ -138,6 +138,46 @@ def refresh_session_token(email: str, checkin_token: str) -> Optional[str]:
             log(email, "Fail", "Email mismatch - Checkout user email does not match Checkin account")
             return None
             
+        # Notify CheckOut API about the token update
+        try:
+            if os.getenv('FLASK_DEBUG') == '1':
+                print("[DEBUG] Notifying CheckOut API about token update")
+            
+            client = CheckOutClient()
+            update_payload = {
+                "email": email,
+                "oldtoken": checkin_token,
+                "newtoken": new_token
+            }
+            
+            if os.getenv('FLASK_DEBUG') == '1':
+                print(f"[DEBUG] Update payload: {update_payload}")
+            
+            response = client.post('update', update_payload)
+            changed_rows = response.get('result', {}).get('changedRows', 0)
+            
+            if os.getenv('FLASK_DEBUG') == '1':
+                print(f"[DEBUG] Token update response: {response}")
+                print(f"[DEBUG] Rows updated: {changed_rows}")
+            
+            if changed_rows == 0:
+                if os.getenv('FLASK_DEBUG') == '1':
+                    print("[DEBUG] Token update successful but no rows changed")
+                log(email, "Fail", "Session refresh fail - Token updated but user record not found")
+                return new_token  # Still return the token for local use
+                
+            if os.getenv('FLASK_DEBUG') == '1':
+                print("[DEBUG] Token update notification successful")
+                
+        except CheckOutAPIError as e:
+            if os.getenv('FLASK_DEBUG') == '1':
+                print(f"[DEBUG] Error notifying token update: {str(e)}")
+                if e.status_code:
+                    print(f"[DEBUG] Status code: {e.status_code}")
+                if e.response_data:
+                    print(f"[DEBUG] Response data: {e.response_data}")
+            # Continue even if update notification fails, as we still want to use the new token
+            
         if os.getenv('FLASK_DEBUG') == '1':
             print("[DEBUG] Session refresh successful")
         log(email, "Normal", "Session refresh success")

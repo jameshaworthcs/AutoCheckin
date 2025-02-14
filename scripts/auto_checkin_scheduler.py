@@ -2,7 +2,7 @@ import time
 import random
 from typing import List, Dict, Any
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 from api.state import state
 from scripts.session_refresh import refresh_session_token, get_utc_timestamp
@@ -91,8 +91,11 @@ async def start_autocheckin_cycle() -> None:
     if not RUN_INITIAL_CYCLE:
         next_run_ms = random.randint(int(MIN_MS_BETWEEN_RUNS * 1000), int(MAX_MS_BETWEEN_RUNS * 1000)) / 1000
         next_run_seconds = next_run_ms
+        next_run_time = datetime.now(timezone.utc) + timedelta(seconds=next_run_seconds)
+        state.set_data('next_cycle_run_time', next_run_time.isoformat())
         if os.getenv('FLASK_DEBUG') == '1':
             print(f"[DEBUG] Waiting {next_run_seconds:.2f} seconds before first cycle")
+            print(f"[DEBUG] Next run scheduled for: {next_run_time.isoformat()}")
         await asyncio.sleep(next_run_seconds)
     
     while True:
@@ -117,9 +120,12 @@ async def start_autocheckin_cycle() -> None:
         
         next_run_ms = random.randint(int(MIN_MS_BETWEEN_RUNS * 1000), int(MAX_MS_BETWEEN_RUNS * 1000)) / 1000
         next_run_seconds = next_run_ms
+        next_run_time = datetime.now(timezone.utc) + timedelta(seconds=next_run_seconds)
+        state.set_data('next_cycle_run_time', next_run_time.isoformat())
         
         if os.getenv('FLASK_DEBUG') == '1':
             print(f"[DEBUG] Cycle complete. Waiting {next_run_seconds:.2f} seconds before next cycle")
+            print(f"[DEBUG] Next run scheduled for: {next_run_time.isoformat()}")
         await asyncio.sleep(next_run_seconds)
 
 async def start_scheduler() -> None:

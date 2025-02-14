@@ -10,7 +10,8 @@ class GlobalState:
         self.data: Dict[str, Any] = {
             'last_users_fetch': None,
             'last_all_session_refresh': None,
-            'last_individual_session_refresh': None
+            'last_individual_session_refresh': None,
+            'next_cycle_run_time': None
         }
         self._lock = threading.Lock()
         

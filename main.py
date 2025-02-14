@@ -25,10 +25,11 @@ def run_scheduler():
     asyncio.set_event_loop(loop)
     loop.run_until_complete(start_scheduler())
 
-# Only start scheduler in the main Flask process
-if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+# Start scheduler in both development and production
+if not os.environ.get('SCHEDULER_STARTED'):
+    os.environ['SCHEDULER_STARTED'] = 'true'
     if os.getenv('FLASK_DEBUG') == '1':
-        print("[DEBUG] Starting auto checkin scheduler in main process")
+        print("[DEBUG] Starting auto checkin scheduler")
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
 

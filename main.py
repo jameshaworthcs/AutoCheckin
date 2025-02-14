@@ -7,6 +7,8 @@ from api.routes.user_routes import session_bp
 import threading
 import os
 from dotenv import load_dotenv
+import asyncio
+from scripts.auto_checkin_scheduler import start_scheduler
 
 # Load environment variables
 load_dotenv()
@@ -17,14 +19,27 @@ app = Flask(__name__, static_folder='public', static_url_path='')
 monitor_thread = threading.Thread(target=connection_monitor, daemon=True)
 monitor_thread.start()
 
+# Start auto checkin scheduler in background thread
+def run_scheduler():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(start_scheduler())
+
+# Only start scheduler in the main Flask process
+if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+    if os.getenv('FLASK_DEBUG') == '1':
+        print("[DEBUG] Starting auto checkin scheduler in main process")
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
+
 # Register global authentication middleware
 @app.before_request
 def authenticate():
     # Skip authentication for static files
-    if request.path.startswith('/'):
-        path = request.path[1:]  # Remove leading slash
-        if os.path.exists(os.path.join(app.static_folder, path)):
-            return None
+    # if request.path.startswith('/'):
+    #     path = request.path[1:]  # Remove leading slash
+    #     if os.path.exists(os.path.join(app.static_folder, path)):
+    #         return None
     
     result = check_api_key()
     if result is not None:

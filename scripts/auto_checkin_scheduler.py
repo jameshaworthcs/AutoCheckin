@@ -9,11 +9,11 @@ from scripts.session_refresh import refresh_session_token, get_utc_timestamp
 
 # Scheduler configuration constants
 INITIAL_DELAY_SECONDS = 5
-RUN_INITIAL_CYCLE = True
-MIN_HOURS_BETWEEN_RUNS = 1
-MAX_HOURS_BETWEEN_RUNS = 5
+RUN_INITIAL_CYCLE = False
+MIN_MS_BETWEEN_RUNS = 36.00  # 3.6 seconds for testing (would be 3600000 for 1 hour in production)
+MAX_MS_BETWEEN_RUNS = 40.000  # 18 seconds for testing (would be 18000000 for 5 hours in production)
 MIN_USER_DELAY_MS = 0
-MAX_USER_DELAY_MS = 600000  # 10 minutes max delay between users for stealth
+MAX_USER_DELAY_MS = 60  # 10 minutes max delay between users for stealth
 
 def get_users() -> List[Dict[str, Any]]:
     """Retrieve registered users from the global state.
@@ -89,10 +89,10 @@ async def start_autocheckin_cycle() -> None:
     await asyncio.sleep(INITIAL_DELAY_SECONDS)
     
     if not RUN_INITIAL_CYCLE:
-        next_run_hours = random.randint(MIN_HOURS_BETWEEN_RUNS, MAX_HOURS_BETWEEN_RUNS)
-        next_run_seconds = next_run_hours * 3600
+        next_run_ms = random.randint(int(MIN_MS_BETWEEN_RUNS * 1000), int(MAX_MS_BETWEEN_RUNS * 1000)) / 1000
+        next_run_seconds = next_run_ms
         if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Waiting {next_run_hours} hours before first cycle")
+            print(f"[DEBUG] Waiting {next_run_seconds:.2f} seconds before first cycle")
         await asyncio.sleep(next_run_seconds)
     
     while True:
@@ -106,7 +106,7 @@ async def start_autocheckin_cycle() -> None:
             print(f"[DEBUG] Processing {len(users)} users")
         
         for user in users:
-            delay_ms = random.randint(MIN_USER_DELAY_MS, MAX_USER_DELAY_MS)
+            delay_ms = random.randint(MIN_USER_DELAY_MS, int(MAX_USER_DELAY_MS))
             delay_sec = delay_ms / 1000
             
             if os.getenv('FLASK_DEBUG') == '1':
@@ -115,11 +115,11 @@ async def start_autocheckin_cycle() -> None:
             
             await run_autocheckin(user)
         
-        next_run_hours = random.randint(MIN_HOURS_BETWEEN_RUNS, MAX_HOURS_BETWEEN_RUNS)
-        next_run_seconds = next_run_hours * 3600
+        next_run_ms = random.randint(int(MIN_MS_BETWEEN_RUNS * 1000), int(MAX_MS_BETWEEN_RUNS * 1000)) / 1000
+        next_run_seconds = next_run_ms
         
         if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Cycle complete. Waiting {next_run_hours} hours before next cycle")
+            print(f"[DEBUG] Cycle complete. Waiting {next_run_seconds:.2f} seconds before next cycle")
         await asyncio.sleep(next_run_seconds)
 
 async def start_scheduler() -> None:

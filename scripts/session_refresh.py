@@ -4,10 +4,48 @@ from datetime import datetime, timezone
 import requests
 from bs4 import BeautifulSoup
 import os
+import json
+from api.checkout_client import CheckOutClient, CheckOutAPIError
 
 def log(email: str, state: str, message: str) -> None:
-    """Placeholder for logging function"""
-    pass
+    """
+    Log session refresh events to the CheckOut API
+    
+    Args:
+        email: User's email address
+        state: Status of the operation ('Normal', 'Fail', etc.)
+        message: Detailed message about the operation
+    """
+    if os.getenv('FLASK_DEBUG') == '1':
+        print(f"\n[DEBUG] Logging event to CheckOut API")
+        print(f"[DEBUG] Email: {email}")
+        print(f"[DEBUG] State: {state}")
+        print(f"[DEBUG] Message: {message}")
+    
+    try:
+        client = CheckOutClient()
+        payload = {
+            "email": email,
+            "state": state,
+            "message": message
+        }
+        
+        if os.getenv('FLASK_DEBUG') == '1':
+            print(f"[DEBUG] Making POST request to log endpoint")
+            print(f"[DEBUG] Payload: {payload}")
+        
+        response = client.post('log', payload)
+        
+        if os.getenv('FLASK_DEBUG') == '1':
+            print(f"[DEBUG] Log request successful")
+        
+    except CheckOutAPIError as e:
+        if os.getenv('FLASK_DEBUG') == '1':
+            print(f"[DEBUG] Error logging to CheckOut API: {str(e)}")
+            if e.status_code:
+                print(f"[DEBUG] Status code: {e.status_code}")
+            if e.response_data:
+                print(f"[DEBUG] Response data: {e.response_data}")
 
 def get_utc_timestamp() -> str:
     """Get current UTC timestamp in ISO format with milliseconds"""

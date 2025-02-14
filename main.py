@@ -90,7 +90,9 @@ def index():
                 "state": "/api/v1/state",
                 "refresh": "/api/v1/refresh",
                 "refresh_session": "/api/v1/refresh-session/<email>",
-                "fetch_users": "/api/v1/fetch-users"
+                "fetch_users": "/api/v1/fetch-users",
+                "codes": "/api/v1/codes",
+                "try_codes": "/api/v1/try-codes"
             },
             "status": {
                 "connected": state.is_connected()

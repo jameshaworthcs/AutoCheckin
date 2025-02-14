@@ -2,6 +2,7 @@ from flask import Blueprint
 from api.utils import create_response
 from scripts.session_refresh import get_all_refresh_sessions, get_refresh_session_by_email
 from api.fetch_users import fetch_users
+from scripts.code_submission import try_codes_for_all_users, get_codes
 
 session_bp = Blueprint('session', __name__)
 
@@ -39,4 +40,22 @@ def trigger_fetch_users():
         success=success,
         message="User fetch completed" if success else "User fetch failed",
         data={"success": success}
+    )
+
+@session_bp.route('/try-codes', methods=['GET'])
+def try_codes():
+    """Try available codes for all users"""
+    result = try_codes_for_all_users()
+    return create_response(
+        message="Code submission completed",
+        data=result
+    )
+
+@session_bp.route('/codes', methods=['GET'])
+def get_available_codes():
+    """Get available codes from CheckOut API"""
+    codes = get_codes()
+    return create_response(
+        message="Available codes retrieved successfully",
+        data={"codes": sorted(codes)}
     ) 

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from api.state import state
 from datetime import datetime, timezone
 import requests
@@ -51,16 +51,19 @@ def get_utc_timestamp() -> str:
     """Get current UTC timestamp in ISO format with milliseconds"""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
-def refresh_session_token(email: str, checkin_token: str) -> Optional[str]:
+def refresh_session_token(email: str, checkin_token: str, get_csrf_and_events: bool = False) -> Optional[Union[str, Dict[str, Any]]]:
     """
     Refresh a user's session token by accessing checkin.york.ac.uk
     
     Args:
         email: User's email address
         checkin_token: Current checkin token (prestostudent_session)
+        get_csrf_and_events: Whether to return CSRF token and events along with the session token
         
     Returns:
-        Optional[str]: New session token if successful, None if failed
+        Optional[Union[str, Dict[str, Any]]]: 
+            - If get_csrf_and_events=False: New session token if successful, None if failed
+            - If get_csrf_and_events=True: Dict with new_token, csrf_token, and events if successful, None if failed
     """
     if os.getenv('FLASK_DEBUG') == '1':
         print(f"\n[DEBUG] Starting session refresh for {email}")
@@ -138,6 +141,48 @@ def refresh_session_token(email: str, checkin_token: str) -> Optional[str]:
             log(email, "Fail", "Email mismatch - Checkout user email does not match Checkin account")
             return None
             
+        # Get CSRF token and events if requested
+        if get_csrf_and_events:
+            csrf_token = soup.find("meta", {"name": "csrf-token"})["content"]
+            events = []
+            
+            classes = soup.find_all("section", {"class": "box-typical box-typical-padding"})
+            if classes and not classes[0].text.__contains__("There is currently no activity for which you can register yourself."):
+                for _class in classes:
+                    time = _class.find_all("div", {"class": "col-md-4"})[0].text.strip()
+                    start, end = time.split(" - ")
+                    start = datetime.strptime(datetime.now().strftime("%y %m %d ") + start, "%y %m %d %H:%M")
+                    end = datetime.strptime(datetime.now().strftime("%y %m %d ") + end, "%y %m %d %H:%M")
+
+                    event = {
+                        "start_time": start.isoformat(),
+                        "end_time": end.isoformat(),
+                        "activity": _class.find_all("div", {"class": "col-md-4"})[1].text.strip(),
+                        "lecturer": _class.find_all("div", {"class": "col-md-4"})[2].text.strip(),
+                        "space": _class.find_all("div", {"class": "col-md-4"})[3].text.strip(),
+                        "status": "unknown",
+                        "id": _class.get("data-activities-id"),
+                    }
+
+                    options = _class.find_all("div", {"class": "selfregistration_status"})
+                    for o in options:
+                        if o.get("class")[-1] == "hidden":
+                            continue
+
+                        widget = o.find("div", {"class": "widget-simple-sm-bottom"})
+                        if widget is not None:
+                            event["status"] = o.find("div", {"class": "widget-simple-sm-bottom"}).text.strip()
+                            continue
+
+                        event["status"] = "NotPresent"
+                        break
+
+                    events.append(event)
+            
+            if os.getenv('FLASK_DEBUG') == '1':
+                print(f"[DEBUG] Found {len(events)} events")
+                print(f"[DEBUG] CSRF token: {csrf_token}")
+            
         # Notify CheckOut API about the token update
         try:
             if os.getenv('FLASK_DEBUG') == '1':
@@ -164,8 +209,8 @@ def refresh_session_token(email: str, checkin_token: str) -> Optional[str]:
                 if os.getenv('FLASK_DEBUG') == '1':
                     print("[DEBUG] Token update successful but no rows changed")
                 log(email, "Fail", "Session refresh fail - Token updated but user record not found")
-                return new_token  # Still return the token for local use
-                
+                # Still continue as we have a valid token
+            
             if os.getenv('FLASK_DEBUG') == '1':
                 print("[DEBUG] Token update notification successful")
                 
@@ -181,6 +226,13 @@ def refresh_session_token(email: str, checkin_token: str) -> Optional[str]:
         if os.getenv('FLASK_DEBUG') == '1':
             print("[DEBUG] Session refresh successful")
         log(email, "Normal", "Session refresh success")
+        
+        if get_csrf_and_events:
+            return {
+                "new_token": new_token,
+                "csrf_token": csrf_token,
+                "events": events
+            }
         return new_token
         
     except Exception as e:

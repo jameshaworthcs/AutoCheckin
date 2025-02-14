@@ -14,6 +14,7 @@ A Flask-based REST API that provides a session handling and checkins for the Che
   - [Status Endpoints](#status-endpoints)
   - [Session Management Endpoints](#session-management-endpoints)
   - [User Management Endpoints](#user-management-endpoints)
+  - [Code Management Endpoints](#code-management-endpoints)
 - [Error Handling](#error-handling)
 
 ## Features
@@ -174,6 +175,40 @@ web: gunicorn main:app
         "message": "User fetch completed",
         "data": {
             "success": true
+        }
+    }
+    ```
+
+### Code Management Endpoints
+- GET `/api/v1/codes`
+  - Returns a sorted list of available codes from the CheckOut API
+  - Response Format:
+    ```json
+    {
+        "success": true,
+        "message": "Available codes retrieved successfully",
+        "data": {
+            "codes": [123456, 123457, ...]
+        }
+    }
+    ```
+
+- GET `/api/v1/try-codes`
+  - Attempts to use available codes for all users' events
+  - For each user:
+    1. Refreshes their session token
+    2. Gets their current events
+    3. Tries available codes for each event not marked as present
+    4. Logs successful checkins to CheckOut API
+  - Response Format:
+    ```json
+    {
+        "success": true,
+        "message": "Code submission completed",
+        "data": {
+            "total_users": 10,
+            "processed_users": 8,
+            "timestamp": "2024-03-21T10:45:00Z"
         }
     }
     ```

@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import os
 import json
 from api.checkout_client import CheckOutClient, CheckOutAPIError
+from api.utils import get_utc_timestamp
 
 def log(email: str, state: str, message: str) -> None:
     """
@@ -46,10 +47,6 @@ def log(email: str, state: str, message: str) -> None:
                 print(f"[DEBUG] Status code: {e.status_code}")
             if e.response_data:
                 print(f"[DEBUG] Response data: {e.response_data}")
-
-def get_utc_timestamp() -> str:
-    """Get current UTC timestamp in ISO format with milliseconds"""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
 def refresh_session_token(email: str, checkin_token: str, get_csrf_and_events: bool = False) -> Optional[Union[str, Dict[str, Any]]]:
     """

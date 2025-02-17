@@ -5,6 +5,7 @@ from datetime import datetime
 from api.state import state
 from api.checkout_client import CheckOutClient, CheckOutAPIError
 from scripts.session_refresh import refresh_session_token, log
+from api.utils import get_utc_timestamp
 
 def get_codes() -> List[str]:
     """Fetch and sort available checkin codes from the CheckOut API.
@@ -128,6 +129,7 @@ def try_codes_for_user(email: str, current_token: str) -> None:
     1. Tries each available code in order of reputation score
     2. Stops trying codes for an event once one succeeds
     3. Logs successful checkins to the system
+    4. Updates the stored session token in global state
     
     Args:
         email: User's email address
@@ -144,6 +146,16 @@ def try_codes_for_user(email: str, current_token: str) -> None:
         
     new_token = result['new_token']
     csrf_token = result['csrf_token']
+    
+    # Update the stored session token in global state
+    stored_users = state.get_data('autoCheckinUsers') or []
+    for user in stored_users:
+        if user.get('email') == email:
+            user['checkintoken'] = new_token
+            user['checkinReportTime'] = get_utc_timestamp()
+            break
+    state.set_data('autoCheckinUsers', stored_users)
+    
     if os.getenv('FLASK_DEBUG') == '1':
         print(f"[DEBUG] CSRF token: {csrf_token}")
     events = result['events']

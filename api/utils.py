@@ -1,5 +1,6 @@
 from flask import jsonify
 from typing import Any, Optional
+from datetime import datetime, timezone
 
 def create_response(success: bool = True, 
                    data: Any = None, 
@@ -18,4 +19,8 @@ def create_response(success: bool = True,
     if error:
         response["error"] = error
         
-    return jsonify(response), status_code 
+    return jsonify(response), status_code
+
+def get_utc_timestamp() -> str:
+    """Get current UTC timestamp in ISO format with milliseconds"""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z" 

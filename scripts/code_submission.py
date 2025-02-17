@@ -5,7 +5,7 @@ from datetime import datetime
 from api.state import state
 from api.checkout_client import CheckOutClient, CheckOutAPIError
 from scripts.session_refresh import refresh_session_token, log
-from api.utils import get_utc_timestamp
+from api.utils import get_utc_timestamp, debug_log
 
 def get_codes() -> List[str]:
     """Fetch and sort available checkin codes from the CheckOut API.
@@ -16,32 +16,27 @@ def get_codes() -> List[str]:
     Returns:
         List[str]: List of checkin codes sorted by reputation score (most successful first).
     """
-    if os.getenv('FLASK_DEBUG') == '1':
-        print("\n[DEBUG] Fetching codes from CheckOut API")
+    debug_log("\nFetching codes from CheckOut API")
     
     try:
         client = CheckOutClient()
         response = client.get('codes/yrk/cs/2')
         
-        if os.getenv('FLASK_DEBUG') == '1':
-            print("[DEBUG] Parsing response from CheckOut API")
+        debug_log("Parsing response from CheckOut API")
         
         if response.get('status_code') == 403:
-            if os.getenv('FLASK_DEBUG') == '1':
-                print("[DEBUG] Access forbidden")
+            debug_log("Access forbidden")
             return []
             
         session_count = response.get('sessionCount', 0)
         if not session_count:
-            if os.getenv('FLASK_DEBUG') == '1':
-                print("[DEBUG] No active sessions found")
+            debug_log("No active sessions found")
             return []
             
         codes = []
         sessions = response.get('sessions', [])
         
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Found {len(sessions)} sessions")
+        debug_log(f"Found {len(sessions)} sessions")
             
         for session in sessions:
             session_codes = session.get('codes', [])
@@ -51,14 +46,12 @@ def get_codes() -> List[str]:
         codes.sort(key=lambda x: x.get('count', 0), reverse=True)
         sorted_checkin_codes = [str(code.get('checkinCode')) for code in codes]
         
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Extracted {len(sorted_checkin_codes)} codes")
+        debug_log(f"Extracted {len(sorted_checkin_codes)} codes")
             
         return sorted_checkin_codes
         
     except CheckOutAPIError as e:
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Error fetching codes: {str(e)}")
+        debug_log(f"Error fetching codes: {str(e)}")
         return []
 
 def try_code(event_id: str, code: str, session_token: str, csrf_token: str) -> bool:
@@ -75,9 +68,8 @@ def try_code(event_id: str, code: str, session_token: str, csrf_token: str) -> b
     Returns:
         bool: True if code was accepted, False if invalid or error occurred
     """
-    if os.getenv('FLASK_DEBUG') == '1':
-        print(f"\n[DEBUG] Trying code for event {event_id}")
-        print(f"[DEBUG] Code: {code}")
+    debug_log(f"\nTrying code for event {event_id}")
+    debug_log(f"Code: {code}")
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0",
@@ -100,26 +92,21 @@ def try_code(event_id: str, code: str, session_token: str, csrf_token: str) -> b
             data=data,
         )
         
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Response status code: {response.status_code}")
+        debug_log(f"Response status code: {response.status_code}")
         
         if response.status_code == 422:  # Invalid code
-            if os.getenv('FLASK_DEBUG') == '1':
-                print("[DEBUG] Invalid code")
+            debug_log("Invalid code")
             return False
             
         if response.status_code != 200:
-            if os.getenv('FLASK_DEBUG') == '1':
-                print(f"[DEBUG] Error response: {response.text}")
+            debug_log(f"Error response: {response.text}")
             return False
             
-        if os.getenv('FLASK_DEBUG') == '1':
-            print("[DEBUG] Code accepted successfully")
+        debug_log("Code accepted successfully")
         return True
         
     except Exception as e:
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Error trying code: {str(e)}")
+        debug_log(f"Error trying code: {str(e)}")
         return False
 
 def try_codes_for_user(email: str, current_token: str) -> None:
@@ -135,13 +122,11 @@ def try_codes_for_user(email: str, current_token: str) -> None:
         email: User's email address
         current_token: User's current session token
     """
-    if os.getenv('FLASK_DEBUG') == '1':
-        print(f"\n[DEBUG] Starting code submission for {email}")
+    debug_log(f"\nStarting code submission for {email}")
     
     result = refresh_session_token(email, current_token, get_csrf_and_events=True)
     if not result:
-        if os.getenv('FLASK_DEBUG') == '1':
-            print("[DEBUG] Failed to refresh session token")
+        debug_log("Failed to refresh session token")
         return
         
     new_token = result['new_token']
@@ -156,33 +141,27 @@ def try_codes_for_user(email: str, current_token: str) -> None:
             break
     state.set_data('autoCheckinUsers', stored_users)
     
-    if os.getenv('FLASK_DEBUG') == '1':
-        print(f"[DEBUG] CSRF token: {csrf_token}")
+    debug_log(f"CSRF token: {csrf_token}")
     events = result['events']
     
-    if os.getenv('FLASK_DEBUG') == '1':
-        print(f"[DEBUG] Found {len(events)} events")
+    debug_log(f"Found {len(events)} events")
     
     codes = get_codes()
     if not codes:
-        if os.getenv('FLASK_DEBUG') == '1':
-            print("[DEBUG] No codes available")
+        debug_log("No codes available")
         return
         
     for event in events:
         if event['status'] in ['Present', 'Present Late']:
-            if os.getenv('FLASK_DEBUG') == '1':
-                print(f"[DEBUG] Skipping event {event['activity']} - already present")
+            debug_log(f"Skipping event {event['activity']} - already present")
             continue
             
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"\n[DEBUG] Processing event: {event['activity']}")
+        debug_log(f"\nProcessing event: {event['activity']}")
         
         for code in codes:
             success = try_code(event['id'], code, new_token, csrf_token)
             if success:
-                if os.getenv('FLASK_DEBUG') == '1':
-                    print(f"[DEBUG] Successfully checked into {event['activity']}")
+                debug_log(f"Successfully checked into {event['activity']}")
                 log(email, "Checkin", f"Checked into {event['activity']} with code {code}")
                 break
                 
@@ -195,12 +174,10 @@ def try_codes_for_all_users() -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Summary containing total users, processed count, and timestamp
     """
-    if os.getenv('FLASK_DEBUG') == '1':
-        print("\n[DEBUG] Starting code submission for all users")
+    debug_log("\nStarting code submission for all users")
     
     users = state.get_data('autoCheckinUsers') or []
-    if os.getenv('FLASK_DEBUG') == '1':
-        print(f"[DEBUG] Found {len(users)} users")
+    debug_log(f"Found {len(users)} users")
     
     processed = 0
     for user in users:
@@ -208,8 +185,7 @@ def try_codes_for_all_users() -> Dict[str, Any]:
         token = user.get('checkintoken')
         
         if not email or not token:
-            if os.getenv('FLASK_DEBUG') == '1':
-                print("[DEBUG] Skipping user - missing email or token")
+            debug_log("Skipping user - missing email or token")
             continue
             
         try_codes_for_user(email, token)

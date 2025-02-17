@@ -3,6 +3,7 @@ import time
 import os
 from typing import Dict, Any
 from .checkout_client import CheckOutClient
+from .utils import debug_log
 
 class GlobalState:
     def __init__(self):
@@ -19,8 +20,7 @@ class GlobalState:
         with self._lock:
             if self.connected != status:
                 self.connected = status
-                if os.getenv('FLASK_DEBUG') == '1':
-                    print(f"Connection status changed to: {status}")
+                debug_log(f"Connection status changed to: {status}")
     
     def is_connected(self) -> bool:
         with self._lock:

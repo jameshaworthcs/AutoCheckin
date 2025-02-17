@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, send_from_directory, request
 from api.test_auth import auth_bp
-from api.utils import create_response
+from api.utils import create_response, debug_log
 from api.middleware import check_api_key
 from api.state import state, connection_monitor
 from api.routes.user_routes import session_bp
@@ -28,8 +28,7 @@ def run_scheduler():
 # Start scheduler in both development and production
 if not os.environ.get('SCHEDULER_STARTED'):
     os.environ['SCHEDULER_STARTED'] = 'true'
-    if os.getenv('FLASK_DEBUG') == '1':
-        print("[DEBUG] Starting auto checkin scheduler")
+    debug_log("Starting auto checkin scheduler")
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
 

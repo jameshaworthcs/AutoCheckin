@@ -1,6 +1,7 @@
 from flask import jsonify
 from typing import Any, Optional
 from datetime import datetime, timezone
+import os
 
 def create_response(success: bool = True, 
                    data: Any = None, 
@@ -24,3 +25,8 @@ def create_response(success: bool = True,
 def get_utc_timestamp() -> str:
     """Get current UTC timestamp in ISO format with milliseconds"""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z" 
+
+def debug_log(message: str) -> None:
+    """Print debug messages only when FLASK_DEBUG is enabled"""
+    if os.getenv('FLASK_DEBUG') == '1':
+        print(f"[DEBUG] {message}") 

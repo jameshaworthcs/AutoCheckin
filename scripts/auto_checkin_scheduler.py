@@ -5,7 +5,8 @@ import asyncio
 from datetime import datetime, timezone, timedelta
 import os
 from api.state import state
-from scripts.session_refresh import refresh_session_token, get_utc_timestamp
+from api.utils import get_utc_timestamp, debug_log
+from scripts.session_refresh import refresh_session_token, log
 
 # Scheduler configuration constants
 INITIAL_DELAY_SECONDS = 5
@@ -16,20 +17,8 @@ MIN_USER_DELAY_MS = 0
 MAX_USER_DELAY_MS = 60  # 10 minutes max delay between users for stealth
 
 def get_users() -> List[Dict[str, Any]]:
-    """Retrieve registered users from the global state.
-    
-    Returns:
-        List[Dict[str, Any]]: List of user dictionaries containing email and session tokens.
-    """
-    if os.getenv('FLASK_DEBUG') == '1':
-        print("\n[DEBUG] Fetching users from stored data")
-    
-    users = state.get_data('autoCheckinUsers') or []
-    
-    if os.getenv('FLASK_DEBUG') == '1':
-        print(f"[DEBUG] Found {len(users)} users")
-    
-    return users
+    """Get list of users from global state"""
+    return state.get_data('autoCheckinUsers') or []
 
 async def run_autocheckin(user: Dict[str, Any]) -> None:
     """Process auto checkin for a single user by refreshing their session token.
@@ -41,12 +30,10 @@ async def run_autocheckin(user: Dict[str, Any]) -> None:
     token = user.get('checkintoken')
     
     if not email or not token:
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Missing email or token for user")
+        debug_log(f"Missing email or token for user")
         return
         
-    if os.getenv('FLASK_DEBUG') == '1':
-        print(f"[DEBUG] Running auto checkin for {email}")
+    debug_log(f"Running auto checkin for {email}")
     
     new_token = refresh_session_token(email, token)
     users = state.get_data('autoCheckinUsers') or []
@@ -55,16 +42,14 @@ async def run_autocheckin(user: Dict[str, Any]) -> None:
     for stored_user in users:
         if stored_user.get('email') == email:
             if new_token:
-                if os.getenv('FLASK_DEBUG') == '1':
-                    print(f"[DEBUG] Token refresh successful for {email}")
+                debug_log(f"Token refresh successful for {email}")
                 stored_user.update({
                     'checkintoken': new_token,
                     'checkinReport': 'Normal',
                     'checkinReportTime': current_time
                 })
             else:
-                if os.getenv('FLASK_DEBUG') == '1':
-                    print(f"[DEBUG] Token refresh failed for {email}")
+                debug_log(f"Token refresh failed for {email}")
                 stored_user.update({
                     'checkinReport': 'Fail',
                     'checkinReportTime': current_time
@@ -81,10 +66,9 @@ async def start_autocheckin_cycle() -> None:
     2. Shuffles user order each cycle
     3. Adds random delays between processing each user
     """
-    if os.getenv('FLASK_DEBUG') == '1':
-        print("\n[DEBUG] Starting auto checkin scheduler")
-        print(f"[DEBUG] Initial delay: {INITIAL_DELAY_SECONDS} seconds")
-        print(f"[DEBUG] Run initial cycle: {RUN_INITIAL_CYCLE}")
+    debug_log("\nStarting auto checkin scheduler")
+    debug_log(f"Initial delay: {INITIAL_DELAY_SECONDS} seconds")
+    debug_log(f"Run initial cycle: {RUN_INITIAL_CYCLE}")
     
     await asyncio.sleep(INITIAL_DELAY_SECONDS)
     
@@ -93,27 +77,23 @@ async def start_autocheckin_cycle() -> None:
         next_run_seconds = next_run_ms
         next_run_time = datetime.now(timezone.utc) + timedelta(seconds=next_run_seconds)
         state.set_data('next_cycle_run_time', next_run_time.isoformat())
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Waiting {next_run_seconds:.2f} seconds before first cycle")
-            print(f"[DEBUG] Next run scheduled for: {next_run_time.isoformat()}")
+        debug_log(f"Waiting {next_run_seconds:.2f} seconds before first cycle")
+        debug_log(f"Next run scheduled for: {next_run_time.isoformat()}")
         await asyncio.sleep(next_run_seconds)
     
     while True:
-        if os.getenv('FLASK_DEBUG') == '1':
-            print("\n[DEBUG] Starting new auto checkin cycle")
+        debug_log("\nStarting new auto checkin cycle")
         
         users = get_users()
         random.shuffle(users)
         
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Processing {len(users)} users")
+        debug_log(f"Processing {len(users)} users")
         
         for user in users:
             delay_ms = random.randint(MIN_USER_DELAY_MS, int(MAX_USER_DELAY_MS))
             delay_sec = delay_ms / 1000
             
-            if os.getenv('FLASK_DEBUG') == '1':
-                print(f"[DEBUG] Waiting {delay_sec:.2f} seconds before processing next user")
+            debug_log(f"Waiting {delay_sec:.2f} seconds before processing next user")
             await asyncio.sleep(delay_sec)
             
             await run_autocheckin(user)
@@ -123,9 +103,8 @@ async def start_autocheckin_cycle() -> None:
         next_run_time = datetime.now(timezone.utc) + timedelta(seconds=next_run_seconds)
         state.set_data('next_cycle_run_time', next_run_time.isoformat())
         
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Cycle complete. Waiting {next_run_seconds:.2f} seconds before next cycle")
-            print(f"[DEBUG] Next run scheduled for: {next_run_time.isoformat()}")
+        debug_log(f"Cycle complete. Waiting {next_run_seconds:.2f} seconds before next cycle")
+        debug_log(f"Next run scheduled for: {next_run_time.isoformat()}")
         await asyncio.sleep(next_run_seconds)
 
 async def start_scheduler() -> None:
@@ -136,8 +115,7 @@ async def start_scheduler() -> None:
     try:
         await start_autocheckin_cycle()
     except Exception as e:
-        if os.getenv('FLASK_DEBUG') == '1':
-            print(f"[DEBUG] Error in auto checkin scheduler: {str(e)}")
+        debug_log(f"Error in auto checkin scheduler: {str(e)}")
         await start_scheduler()
 
 if __name__ == "__main__":

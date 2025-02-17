@@ -17,6 +17,7 @@ A Flask-based REST API that provides a session handling and checkins for the Che
   - [User Management Endpoints](#user-management-endpoints)
   - [Code Management Endpoints](#code-management-endpoints)
 - [Error Handling](#error-handling)
+- [Acknowledgments](#acknowledgments)
 
 ## Features
 
@@ -263,3 +264,7 @@ Common HTTP status codes:
 - 404: Endpoint not found
 - 405: Method not allowed
 - 500: Internal server error
+
+## Acknowledgments
+
+Special thanks to [actorpus](https://github.com/actorpus/FuckCheckin) for the initial revision of checkin code that this project ultimately stemmed from.

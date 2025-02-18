@@ -7,15 +7,29 @@ from .utils import debug_log
 
 
 class GlobalState:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(GlobalState, cls).__new__(cls)
+                cls._instance.initialized = False
+            return cls._instance
+
     def __init__(self):
-        self.connected = False
-        self.data: Dict[str, Any] = {
-            "last_users_fetch": None,
-            "last_all_session_refresh": None,
-            "last_individual_session_refresh": None,
-            "next_cycle_run_time": None,
-        }
-        self._lock = threading.Lock()
+        if not self.initialized:
+            self.connected = False
+            self.data: Dict[str, Any] = {
+                "last_users_fetch": None,
+                "last_all_session_refresh": None,
+                "last_individual_session_refresh": None,
+                "next_cycle_run_time": None,
+                "last_attendance_fetch_run": None,
+                "autoCheckinUsers": [],
+            }
+            self._lock = threading.Lock()
+            self.initialized = True
 
     def set_connected(self, status: bool) -> None:
         with self._lock:
@@ -29,11 +43,21 @@ class GlobalState:
 
     def set_data(self, key: str, value: Any) -> None:
         with self._lock:
+            debug_log(f"Setting state data for key: {key}")
             self.data[key] = value
+            debug_log(f"State data after update - {key}: {self.data.get(key)}")
 
     def get_data(self, key: str) -> Any:
         with self._lock:
             return self.data.get(key)
+
+    def dump_state(self) -> None:
+        """Debug method to dump entire state"""
+        with self._lock:
+            debug_log("\n=== CURRENT STATE DUMP ===")
+            for key, value in self.data.items():
+                debug_log(f"{key}: {value}")
+            debug_log("=========================\n")
 
 
 # Create a global instance

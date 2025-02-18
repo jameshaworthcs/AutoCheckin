@@ -9,30 +9,69 @@ import os
 from dotenv import load_dotenv
 import asyncio
 from scripts.auto_checkin_scheduler import start_scheduler
+from scripts.auto_attendance_scheduler import initialize_scheduler
+import time
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__, static_folder="public", static_url_path="")
 
-# Start connection monitor in background thread
-monitor_thread = threading.Thread(target=connection_monitor, daemon=True)
-monitor_thread.start()
 
+def start_background_tasks():
+    """Start all background tasks in a way that prevents duplicate threads in debug mode"""
+    if not os.environ.get("WERKZEUG_RUN_MAIN"):  # Only run in the main process
+        return
 
-# Start auto checkin scheduler in background thread
-def run_scheduler():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(start_scheduler())
+    if os.environ.get("BACKGROUND_TASKS_STARTED"):  # Prevent duplicate starts
+        return
 
+    os.environ["BACKGROUND_TASKS_STARTED"] = "true"
 
-# Start scheduler in both development and production
-if not os.environ.get("SCHEDULER_STARTED"):
-    os.environ["SCHEDULER_STARTED"] = "true"
+    # Start connection monitor in background thread
+    monitor_thread = threading.Thread(target=connection_monitor, daemon=True)
+    monitor_thread.start()
+
+    # Start state monitoring thread
+    def monitor_state():
+        while True:
+            debug_log("\n=== CURRENT STATE DATA ===")
+            debug_log(str(state.data))
+            debug_log("=========================\n")
+            time.sleep(10)
+
+    state_monitor_thread = threading.Thread(target=monitor_state, daemon=True)
+    state_monitor_thread.start()
+
+    # Start auto checkin scheduler in background thread
+    def run_checkin_scheduler():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(start_scheduler())
+
+    # Start attendance scheduler in background thread
+    def run_attendance_scheduler():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        while True:
+            try:
+                loop.run_until_complete(initialize_scheduler())
+            except Exception as e:
+                debug_log(f"Error in attendance scheduler: {str(e)}")
+                # Sleep for a bit before retrying to avoid tight error loops
+                time.sleep(5)
+
     debug_log("Starting auto checkin scheduler")
-    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-    scheduler_thread.start()
+    checkin_thread = threading.Thread(target=run_checkin_scheduler, daemon=True)
+    checkin_thread.start()
+
+    debug_log("Starting attendance fetch scheduler")
+    attendance_thread = threading.Thread(target=run_attendance_scheduler, daemon=True)
+    attendance_thread.start()
+
+
+# Start background tasks
+start_background_tasks()
 
 
 # Register global authentication middleware
@@ -112,9 +151,19 @@ def status():
 # Global state endpoint
 @app.route("/api/v1/state")
 def get_state():
+    stored_data = {
+        "last_users_fetch": state.get_data("last_users_fetch"),
+        "last_all_session_refresh": state.get_data("last_all_session_refresh"),
+        "last_individual_session_refresh": state.get_data(
+            "last_individual_session_refresh"
+        ),
+        "next_cycle_run_time": state.get_data("next_cycle_run_time"),
+        "last_attendance_fetch_run": state.get_data("last_attendance_fetch_run"),
+        "autoCheckinUsers": state.get_data("autoCheckinUsers"),
+    }
     return create_response(
         message="Global State",
-        data={"connected": state.is_connected(), "stored_data": state.data},
+        data={"connected": state.is_connected(), "stored_data": stored_data},
     )
 
 

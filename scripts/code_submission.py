@@ -8,7 +8,7 @@ from scripts.session_refresh import refresh_session_token, log
 from api.utils import get_utc_timestamp, debug_log
 
 # Get the checkin URL from environment variables
-CHECKIN_URL = os.getenv('CHECKIN_URL', 'https://checkin.york.ac.uk')
+CHECKIN_URL = os.getenv("CHECKIN_URL", "https://checkin.york.ac.uk")
 
 
 def get_codes() -> List[str]:

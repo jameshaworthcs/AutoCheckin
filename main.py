@@ -13,11 +13,12 @@ from scripts.auto_checkin_scheduler import start_scheduler
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_folder='public', static_url_path='')
+app = Flask(__name__, static_folder="public", static_url_path="")
 
 # Start connection monitor in background thread
 monitor_thread = threading.Thread(target=connection_monitor, daemon=True)
 monitor_thread.start()
+
 
 # Start auto checkin scheduler in background thread
 def run_scheduler():
@@ -25,12 +26,14 @@ def run_scheduler():
     asyncio.set_event_loop(loop)
     loop.run_until_complete(start_scheduler())
 
+
 # Start scheduler in both development and production
-if not os.environ.get('SCHEDULER_STARTED'):
-    os.environ['SCHEDULER_STARTED'] = 'true'
+if not os.environ.get("SCHEDULER_STARTED"):
+    os.environ["SCHEDULER_STARTED"] = "true"
     debug_log("Starting auto checkin scheduler")
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
+
 
 # Register global authentication middleware
 @app.before_request
@@ -40,33 +43,31 @@ def authenticate():
     #     path = request.path[1:]  # Remove leading slash
     #     if os.path.exists(os.path.join(app.static_folder, path)):
     #         return None
-    
+
     result = check_api_key()
     if result is not None:
         return result
 
+
 # Register blueprints
-app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
-app.register_blueprint(session_bp, url_prefix='/api/v1')
+app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
+app.register_blueprint(session_bp, url_prefix="/api/v1")
+
 
 # Error handlers
 @app.errorhandler(404)
 def not_found(error):
     return create_response(
-        success=False,
-        message="API Error",
-        error="Endpoint not found",
-        status_code=404
+        success=False, message="API Error", error="Endpoint not found", status_code=404
     )
+
 
 @app.errorhandler(405)
 def method_not_allowed(error):
     return create_response(
-        success=False,
-        message="API Error",
-        error="Method not allowed",
-        status_code=405
+        success=False, message="API Error", error="Method not allowed", status_code=405
     )
+
 
 @app.errorhandler(500)
 def internal_server_error(error):
@@ -74,11 +75,12 @@ def internal_server_error(error):
         success=False,
         message="API Error",
         error="Internal server error",
-        status_code=500
+        status_code=500,
     )
 
+
 # Root endpoint
-@app.route('/')
+@app.route("/")
 def index():
     return create_response(
         message="Welcome to the AutoCheckin API",
@@ -92,48 +94,45 @@ def index():
                 "refresh_session": "/api/v1/refresh-session/<email>",
                 "fetch_users": "/api/v1/fetch-users",
                 "codes": "/api/v1/codes",
-                "try_codes": "/api/v1/try-codes"
+                "try_codes": "/api/v1/try-codes",
             },
-            "status": {
-                "connected": state.is_connected()
-            }
-        }
+            "status": {"connected": state.is_connected()},
+        },
     )
+
 
 # Status endpoint
-@app.route('/api/v1/status')
+@app.route("/api/v1/status")
 def status():
     return create_response(
-        message="API Status",
-        data={
-            "connected": state.is_connected()
-        }
+        message="API Status", data={"connected": state.is_connected()}
     )
 
+
 # Global state endpoint
-@app.route('/api/v1/state')
+@app.route("/api/v1/state")
 def get_state():
     return create_response(
         message="Global State",
-        data={
-            "connected": state.is_connected(),
-            "stored_data": state.data
-        }
+        data={"connected": state.is_connected(), "stored_data": state.data},
     )
 
+
 # Serve favicon.ico from public folder
-@app.route('/favicon.ico')
+@app.route("/favicon.ico")
 def favicon():
-    return send_from_directory(app.static_folder, 'favicon.ico')
+    return send_from_directory(app.static_folder, "favicon.ico")
+
 
 # Serve favicon.svg from public folder
-@app.route('/favicon.svg')
+@app.route("/favicon.svg")
 def favicon_svg():
-    return send_from_directory(app.static_folder, 'favicon.svg')
+    return send_from_directory(app.static_folder, "favicon.svg")
 
-if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    host = os.getenv('HOST', '::')
-    debug = os.getenv('FLASK_DEBUG', '0') == '1'
-    
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 5000))
+    host = os.getenv("HOST", "::")
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+
     app.run(host=host, port=port, debug=debug)

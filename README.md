@@ -16,6 +16,7 @@ A Flask-based REST API that provides a session handling and checkins for the Che
   - [Session Management Endpoints](#session-management-endpoints)
   - [User Management Endpoints](#user-management-endpoints)
   - [Code Management Endpoints](#code-management-endpoints)
+- [Contributing](#contributing)
 - [Error Handling](#error-handling)
 - [Acknowledgments](#acknowledgments)
 
@@ -246,6 +247,36 @@ web: gunicorn main:app
         }
     }
     ```
+
+## Contributing
+
+### Code Formatting
+
+This project uses [Black](https://github.com/psf/black) for code formatting. Black is an uncompromising Python code formatter that ensures consistent style across the project.
+
+To format your code:
+
+1. Install Black (it's included in requirements.txt):
+```bash
+pip install black
+```
+
+2. Format your code before committing:
+```bash
+black .
+```
+
+3. To check if your code is properly formatted without making changes:
+```bash
+black --check .
+```
+
+Note: The project includes a GitHub Actions workflow that automatically checks if all Python files conform to Black's formatting standards. Pull requests will fail if the code is not properly formatted.
+
+To ensure your contributions are accepted:
+1. Run `black .` locally before committing
+2. Verify all files pass the check with `black --check .`
+3. Fix any formatting issues before pushing your changes
 
 ## Error Handling
 

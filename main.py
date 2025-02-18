@@ -19,59 +19,97 @@ app = Flask(__name__, static_folder="public", static_url_path="")
 
 
 def start_background_tasks():
-    """Start all background tasks in a way that prevents duplicate threads in debug mode"""
-    if not os.environ.get("WERKZEUG_RUN_MAIN"):  # Only run in the main process
+    """Start all background tasks in a way that prevents duplicate threads in debug mode.
+    
+    This function handles starting:
+    - Connection monitor
+    - State monitor
+    - Auto checkin scheduler
+    - Attendance scheduler
+    """
+    debug_log("\n=== Starting Background Tasks ===")
+    
+    # In production, WERKZEUG_RUN_MAIN won't be set, so we need different logic
+    if os.environ.get("BACKGROUND_TASKS_STARTED"):
+        debug_log("Background tasks already started, skipping...")
         return
-
-    if os.environ.get("BACKGROUND_TASKS_STARTED"):  # Prevent duplicate starts
-        return
-
+        
     os.environ["BACKGROUND_TASKS_STARTED"] = "true"
+    
+    try:
+        # Start connection monitor in background thread
+        debug_log("Starting connection monitor...")
+        monitor_thread = threading.Thread(target=connection_monitor, daemon=True)
+        monitor_thread.start()
+        debug_log("Connection monitor started successfully")
 
-    # Start connection monitor in background thread
-    monitor_thread = threading.Thread(target=connection_monitor, daemon=True)
-    monitor_thread.start()
+        # Start state monitoring thread
+        def monitor_state():
+            debug_log("State monitor started")
+            while True:
+                try:
+                    debug_log("\n=== CURRENT STATE DATA ===")
+                    debug_log(str(state.data))
+                    debug_log("=========================\n")
+                    time.sleep(10)
+                except Exception as e:
+                    debug_log(f"Error in state monitor: {str(e)}")
+                    time.sleep(5)  # Wait before retrying
 
-    # Start state monitoring thread
-    def monitor_state():
-        while True:
-            debug_log("\n=== CURRENT STATE DATA ===")
-            debug_log(str(state.data))
-            debug_log("=========================\n")
-            time.sleep(10)
+        debug_log("Starting state monitor...")
+        state_monitor_thread = threading.Thread(target=monitor_state, daemon=True)
+        state_monitor_thread.start()
+        debug_log("State monitor started successfully")
 
-    state_monitor_thread = threading.Thread(target=monitor_state, daemon=True)
-    state_monitor_thread.start()
-
-    # Start auto checkin scheduler in background thread
-    def run_checkin_scheduler():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(start_scheduler())
-
-    # Start attendance scheduler in background thread
-    def run_attendance_scheduler():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        while True:
+        # Start auto checkin scheduler in background thread
+        def run_checkin_scheduler():
+            debug_log("Auto checkin scheduler thread starting...")
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             try:
-                loop.run_until_complete(initialize_scheduler())
+                loop.run_until_complete(start_scheduler())
             except Exception as e:
-                debug_log(f"Error in attendance scheduler: {str(e)}")
-                # Sleep for a bit before retrying to avoid tight error loops
-                time.sleep(5)
+                debug_log(f"Error in checkin scheduler: {str(e)}")
+            finally:
+                loop.close()
 
-    debug_log("Starting auto checkin scheduler")
-    checkin_thread = threading.Thread(target=run_checkin_scheduler, daemon=True)
-    checkin_thread.start()
+        debug_log("Starting auto checkin scheduler...")
+        checkin_thread = threading.Thread(target=run_checkin_scheduler, daemon=True)
+        checkin_thread.start()
+        debug_log("Auto checkin scheduler started successfully")
 
-    debug_log("Starting attendance fetch scheduler")
-    attendance_thread = threading.Thread(target=run_attendance_scheduler, daemon=True)
-    attendance_thread.start()
+        # Start attendance scheduler in background thread
+        def run_attendance_scheduler():
+            debug_log("Attendance scheduler thread starting...")
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            while True:
+                try:
+                    loop.run_until_complete(initialize_scheduler())
+                except Exception as e:
+                    debug_log(f"Error in attendance scheduler: {str(e)}")
+                    time.sleep(5)  # Wait before retrying
+                finally:
+                    loop.close()
 
+        debug_log("Starting attendance fetch scheduler...")
+        attendance_thread = threading.Thread(target=run_attendance_scheduler, daemon=True)
+        attendance_thread.start()
+        debug_log("Attendance scheduler started successfully")
+
+        debug_log("=== All background tasks started successfully ===\n")
+        
+    except Exception as e:
+        debug_log(f"Error starting background tasks: {str(e)}")
+        # Don't set BACKGROUND_TASKS_STARTED if we failed
+        os.environ.pop("BACKGROUND_TASKS_STARTED", None)
+        raise  # Re-raise the exception to ensure it's logged
 
 # Start background tasks
-start_background_tasks()
+try:
+    start_background_tasks()
+except Exception as e:
+    debug_log(f"Failed to start background tasks: {str(e)}")
 
 
 # Register global authentication middleware

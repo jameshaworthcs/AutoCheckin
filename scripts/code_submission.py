@@ -7,6 +7,9 @@ from api.checkout_client import CheckOutClient, CheckOutAPIError
 from scripts.session_refresh import refresh_session_token, log
 from api.utils import get_utc_timestamp, debug_log
 
+# Get the checkin URL from environment variables
+CHECKIN_URL = os.getenv('CHECKIN_URL', 'https://checkin.york.ac.uk')
+
 
 def get_codes() -> List[str]:
     """Fetch and sort available checkin codes from the CheckOut API.
@@ -78,7 +81,7 @@ def try_code(event_id: str, code: str, session_token: str, csrf_token: str) -> b
         "Accept": "application/json",
         "Accept-Encoding": "gzip, deflate, br",
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "Referer": "https://checkin.york.ac.uk/selfregistration",
+        "Referer": f"{CHECKIN_URL}/selfregistration",
         "Cookie": f"XSRF-TOKEN={csrf_token}; prestostudent_session={session_token}",
     }
 
@@ -89,7 +92,7 @@ def try_code(event_id: str, code: str, session_token: str, csrf_token: str) -> b
 
     try:
         response = requests.post(
-            f"https://checkin.york.ac.uk/api/selfregistration/{event_id}/present",
+            f"{CHECKIN_URL}/api/selfregistration/{event_id}/present",
             headers=headers,
             data=data,
         )

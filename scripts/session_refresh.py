@@ -8,6 +8,9 @@ import json
 from api.checkout_client import CheckOutClient, CheckOutAPIError
 from api.utils import get_utc_timestamp, debug_log
 
+# Get the checkin URL from environment variables
+CHECKIN_URL = os.getenv('CHECKIN_URL', 'https://checkin.york.ac.uk')
+
 
 def log(email: str, state: str, message: str) -> None:
     """
@@ -73,7 +76,7 @@ def refresh_session_token(
         debug_log("Making request to checkin.york.ac.uk/selfregistration")
 
         req = requests.get(
-            "https://checkin.york.ac.uk/selfregistration",
+            f"{CHECKIN_URL}/selfregistration",
             headers=headers,
         )
 

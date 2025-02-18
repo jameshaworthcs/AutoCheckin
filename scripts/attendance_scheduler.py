@@ -52,12 +52,16 @@ def update_user_attendance_data(
     return user
 
 
-def fetch_all_users_attendance() -> None:
-    """Fetch and update attendance data for all users in autoCheckinUsers."""
+def fetch_all_users_attendance(force_run: bool = False) -> None:
+    """Fetch and update attendance data for all users in autoCheckinUsers.
+    
+    Args:
+        force_run (bool): If True, bypasses the should_run_fetch check. Defaults to False.
+    """
     debug_log("\nStarting attendance fetch for all users")
     state.dump_state()
 
-    if not should_run_fetch():
+    if not force_run and not should_run_fetch():
         debug_log("Skipping attendance fetch - last run was less than 24 hours ago")
         return
 

@@ -5,7 +5,7 @@ from scripts.attendance_scheduler import fetch_all_users_attendance
 
 # Scheduler configuration
 INITIAL_DELAY_SECONDS = 5
-RUN_INITIAL_CYCLE = True
+RUN_INITIAL_CYCLE = False
 
 
 async def start_attendance_scheduler() -> None:

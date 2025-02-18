@@ -6,6 +6,7 @@ from scripts.session_refresh import (
 )
 from api.fetch_users import fetch_users
 from scripts.code_submission import try_codes_for_all_users, get_codes
+from scripts.attendance_scheduler import fetch_all_users_attendance
 
 session_bp = Blueprint("session", __name__)
 
@@ -61,3 +62,21 @@ def get_available_codes():
     return create_response(
         message="Available codes retrieved successfully", data={"codes": sorted(codes)}
     )
+
+
+@session_bp.route("/fetch-attendance", methods=["GET"])
+def fetch_attendance():
+    """Trigger attendance fetch for all users"""
+    try:
+        fetch_all_users_attendance(force_run=True)
+        return create_response(
+            message="Attendance fetch completed successfully",
+            data={"success": True}
+        )
+    except Exception as e:
+        return create_response(
+            success=False,
+            message="Attendance fetch failed",
+            error=str(e),
+            status_code=500
+        )

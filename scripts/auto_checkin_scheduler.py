@@ -27,7 +27,7 @@ MAX_SECONDS_BETWEEN_RUNS = 18000  # 5 hours
 # Random delay between processing individual users (in milliseconds)
 # This helps avoid detection by spreading out requests
 MIN_USER_DELAY_MS = 0
-MAX_USER_DELAY_MS = 10000  # 10 seconds max delay between users for stealth
+MAX_USER_DELAY_MS = 600000  # 10 minutes max delay between users for stealth
 
 
 def get_users() -> List[Dict[str, Any]]:

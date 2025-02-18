@@ -20,7 +20,7 @@ app = Flask(__name__, static_folder="public", static_url_path="")
 
 def start_background_tasks():
     """Start all background tasks in a way that prevents duplicate threads in debug mode.
-    
+
     This function handles starting:
     - Connection monitor
     - State monitor
@@ -28,14 +28,14 @@ def start_background_tasks():
     - Attendance scheduler
     """
     debug_log("\n=== Starting Background Tasks ===")
-    
+
     # In production, WERKZEUG_RUN_MAIN won't be set, so we need different logic
     if os.environ.get("BACKGROUND_TASKS_STARTED"):
         debug_log("Background tasks already started, skipping...")
         return
-        
+
     os.environ["BACKGROUND_TASKS_STARTED"] = "true"
-    
+
     try:
         # Start connection monitor in background thread
         debug_log("Starting connection monitor...")
@@ -43,23 +43,23 @@ def start_background_tasks():
         monitor_thread.start()
         debug_log("Connection monitor started successfully")
 
-        # Start state monitoring thread
-        def monitor_state():
-            debug_log("State monitor started")
-            while True:
-                try:
-                    debug_log("\n=== CURRENT STATE DATA ===")
-                    debug_log(str(state.data))
-                    debug_log("=========================\n")
-                    time.sleep(10)
-                except Exception as e:
-                    debug_log(f"Error in state monitor: {str(e)}")
-                    time.sleep(5)  # Wait before retrying
+        # # Start state monitoring thread
+        # def monitor_state():
+        #     debug_log("State monitor started")
+        #     while True:
+        #         try:
+        #             debug_log("\n=== CURRENT STATE DATA ===")
+        #             debug_log(str(state.data))
+        #             debug_log("=========================\n")
+        #             time.sleep(10)
+        #         except Exception as e:
+        #             debug_log(f"Error in state monitor: {str(e)}")
+        #             time.sleep(5)  # Wait before retrying
 
-        debug_log("Starting state monitor...")
-        state_monitor_thread = threading.Thread(target=monitor_state, daemon=True)
-        state_monitor_thread.start()
-        debug_log("State monitor started successfully")
+        # debug_log("Starting state monitor...")
+        # state_monitor_thread = threading.Thread(target=monitor_state, daemon=True)
+        # state_monitor_thread.start()
+        # debug_log("State monitor started successfully")
 
         # Start auto checkin scheduler in background thread
         def run_checkin_scheduler():
@@ -93,17 +93,20 @@ def start_background_tasks():
                     loop.close()
 
         debug_log("Starting attendance fetch scheduler...")
-        attendance_thread = threading.Thread(target=run_attendance_scheduler, daemon=True)
+        attendance_thread = threading.Thread(
+            target=run_attendance_scheduler, daemon=True
+        )
         attendance_thread.start()
         debug_log("Attendance scheduler started successfully")
 
         debug_log("=== All background tasks started successfully ===\n")
-        
+
     except Exception as e:
         debug_log(f"Error starting background tasks: {str(e)}")
         # Don't set BACKGROUND_TASKS_STARTED if we failed
         os.environ.pop("BACKGROUND_TASKS_STARTED", None)
         raise  # Re-raise the exception to ensure it's logged
+
 
 # Start background tasks
 try:

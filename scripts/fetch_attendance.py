@@ -9,22 +9,38 @@ from api.utils import debug_log
 CHECKIN_URL = os.getenv("CHECKIN_URL", "https://checkin.york.ac.uk")
 
 
-def parse_activity(activity_section: BeautifulSoup) -> Dict[str, Optional[str]]:
+def parse_activity(
+    activity_section: BeautifulSoup, date: str, year: int
+) -> Dict[str, Optional[str]]:
     """Parse a single activity section from the attendance page.
 
     Args:
         activity_section: BeautifulSoup object containing a single activity
+        date: The date of the activity (e.g., "Monday 17 February")
+        year: The year of the activity
 
     Returns:
         Dict containing activity details including reference, location,
-        lecturer name, start/finish times, and attendance state
+        lecturer name, start/finish times, attendance state, and formatted date (YYYY-MM-DD)
     """
     # Get activity reference (name)
-    activity_reference = (
-        activity_section.find("div", {"class": "cont-in"})
-        .get_text(strip=True)
-        .split("\n")[0]
-    )
+    cont_in_div = activity_section.find("div", {"class": "cont-in"})
+    # Get only the text content before the meta list
+    activity_reference = cont_in_div.find(text=True, recursive=False).strip()
+
+    # Format the date to YYYY-MM-DD
+    try:
+        # Remove day name if present (e.g., "Monday 17 February" -> "17 February")
+        date_parts = date.split(" ", 1)
+        date_without_day = date_parts[1] if len(date_parts) > 1 else date_parts[0]
+
+        # Parse and format the date
+        parsed_date = datetime.strptime(f"{date_without_day} {year}", "%d %B %Y")
+        formatted_date = parsed_date.strftime("%Y-%m-%d")
+    except Exception as e:
+        # debug_log(f"Error parsing date {date}: {str(e)}")
+        debug_log("Error parsing date")
+        formatted_date = None
 
     # Get start and finish times
     time_div = activity_section.find("div", {"class": "time"}).get_text(strip=True)
@@ -61,6 +77,7 @@ def parse_activity(activity_section: BeautifulSoup) -> Dict[str, Optional[str]]:
         "startTime": start_time,
         "finishTime": finish_time,
         "attendanceState": attendance_state,
+        "date": formatted_date,
     }
 
 
@@ -81,7 +98,7 @@ def fetch_attendance_page(
             - List of parsed activities
         Returns (None, None) if fetch fails or session is invalid
     """
-    debug_log(f"\nFetching attendance data for {email} - year {year}, week {week}")
+    # debug_log(f"\nFetching attendance data for {email} - year {year}, week {week}")
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0",
@@ -92,13 +109,13 @@ def fetch_attendance_page(
 
     try:
         # Fetch the attendance page
-        debug_log(f"Making request to {CHECKIN_URL}/attendance/{year}/{week}")
+        # debug_log(f"Making request to {CHECKIN_URL}/attendance/{year}/{week}")
 
         response = requests.get(
             f"{CHECKIN_URL}/attendance/{year}/{week}", headers=headers
         )
 
-        debug_log(f"Response status code: {response.status_code}")
+        # debug_log(f"Response status code: {response.status_code}")
 
         if response.status_code != 200:
             debug_log("Failed to fetch attendance page")
@@ -110,7 +127,7 @@ def fetch_attendance_page(
 
         # Verify we got a valid page by checking title
         title = soup.find("title").text
-        debug_log(f"Page title: {title}")
+        # debug_log(f"Page title: {title}")
 
         if title == "Please log in to continue...":
             debug_log("Session expired - login page detected")
@@ -124,22 +141,37 @@ def fetch_attendance_page(
 
         page_email_text = page_email.text.strip()
         if page_email_text != email:
-            debug_log(f"Email mismatch: expected {email}, got {page_email_text}")
+            # debug_log(f"Email mismatch: expected {email}, got {page_email_text}")
+            debug_log("Email mismatch detected")
             return None, None
 
         # Parse activities
         activities = []
-        activity_sections = soup.find_all("section", {"class": "activity-line-action"})
+        current_date = None
 
-        for activity_section in activity_sections:
-            activity = parse_activity(activity_section)
-            activities.append(activity)
+        # Find all activity line items (date containers)
+        activity_lines = soup.find_all("article", {"class": "activity-line-item"})
 
-        debug_log(f"Found {len(activities)} activities")
+        for line in activity_lines:
+            # Get the date for this group of activities
+            date_div = line.find("div", {"class": "activity-line-date"})
+            if date_div:
+                current_date = date_div.get_text(strip=True)
+
+            # Find all activities under this date
+            activity_sections = line.find_all(
+                "section", {"class": "activity-line-action"}
+            )
+            for activity_section in activity_sections:
+                activity = parse_activity(activity_section, current_date, year)
+                activities.append(activity)
+
+        # debug_log(f"Found {len(activities)} activities")
         return soup, activities
 
     except Exception as e:
-        debug_log(f"Error fetching attendance page: {str(e)}")
+        # debug_log(f"Error fetching attendance page: {str(e)}")
+        debug_log("Error fetching attendance page")
         return None, None
 
 

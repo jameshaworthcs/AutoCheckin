@@ -69,7 +69,8 @@ def start_background_tasks():
             try:
                 loop.run_until_complete(start_scheduler())
             except Exception as e:
-                debug_log(f"Error in checkin scheduler: {str(e)}")
+                # debug_log(f"Error in checkin scheduler: {str(e)}")
+                debug_log("Error in checkin scheduler")
             finally:
                 loop.close()
 
@@ -87,7 +88,8 @@ def start_background_tasks():
                 try:
                     loop.run_until_complete(initialize_scheduler())
                 except Exception as e:
-                    debug_log(f"Error in attendance scheduler: {str(e)}")
+                    # debug_log(f"Error in attendance scheduler: {str(e)}")
+                    debug_log("Error in attendance scheduler")
                     time.sleep(5)  # Wait before retrying
                 finally:
                     loop.close()
@@ -102,7 +104,8 @@ def start_background_tasks():
         debug_log("=== All background tasks started successfully ===\n")
 
     except Exception as e:
-        debug_log(f"Error starting background tasks: {str(e)}")
+        # debug_log(f"Error starting background tasks: {str(e)}")
+        debug_log("Error starting background tasks")
         # Don't set BACKGROUND_TASKS_STARTED if we failed
         os.environ.pop("BACKGROUND_TASKS_STARTED", None)
         raise  # Re-raise the exception to ensure it's logged
@@ -112,7 +115,8 @@ def start_background_tasks():
 try:
     start_background_tasks()
 except Exception as e:
-    debug_log(f"Failed to start background tasks: {str(e)}")
+    # debug_log(f"Failed to start background tasks: {str(e)}")
+    debug_log("Failed to start background tasks")
 
 
 # Register global authentication middleware

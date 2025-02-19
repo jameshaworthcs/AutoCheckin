@@ -31,7 +31,7 @@ def log(email: str, state: str, message: str) -> None:
         payload = {"email": email, "state": state, "message": message}
 
         debug_log(f"Making POST request to log endpoint")
-        debug_log(f"Payload: {payload}")
+        # debug_log(f"Payload: {payload}")
 
         response = client.post("log", payload)
 
@@ -39,10 +39,8 @@ def log(email: str, state: str, message: str) -> None:
 
     except CheckOutAPIError as e:
         debug_log(f"Error logging to CheckOut API: {str(e)}")
-        if e.status_code:
-            debug_log(f"Status code: {e.status_code}")
-        if e.response_data:
-            debug_log(f"Response data: {e.response_data}")
+        # debug_log(f"Status code: {e.status_code}")
+        # debug_log(f"Response data: {e.response_data}")
 
 
 def refresh_session_token(
@@ -62,7 +60,7 @@ def refresh_session_token(
             - If get_csrf_and_events=True: Dict with new_token, csrf_token, and events if successful, None if failed
     """
     debug_log(f"\nStarting session refresh for {email}")
-    debug_log(f"Current token: {checkin_token[:30]}...")
+    # debug_log(f"Current token: {checkin_token[:30]}...")
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0",
@@ -80,7 +78,7 @@ def refresh_session_token(
             headers=headers,
         )
 
-        debug_log(f"Response status code: {req.status_code}")
+        # debug_log(f"Response status code: {req.status_code}")
 
         # Get new session token from cookies
         cookies = req.cookies
@@ -90,14 +88,14 @@ def refresh_session_token(
             return None
 
         new_token = cookies["prestostudent_session"]
-        debug_log(f"New token received: {new_token[:30]}...")
+        # debug_log(f"New token received: {new_token[:30]}...")
 
         # Parse the page content
         debug_log("Parsing response content")
         soup = BeautifulSoup(req.content.decode(), "html.parser")
         title = soup.find("title").text
 
-        debug_log(f"Page title: {title}")
+        # debug_log(f"Page title: {title}")
 
         # Verify page title
         if title == "Please log in to continue...":
@@ -120,7 +118,7 @@ def refresh_session_token(
             return None
 
         page_email = name_elements[0].text.strip()
-        debug_log(f"Found email in page: {page_email}")
+        # debug_log(f"Found email in page: {page_email}")
 
         if page_email != email:
             debug_log(f"Email mismatch: expected {email}, got {page_email}")
@@ -188,8 +186,8 @@ def refresh_session_token(
 
                     events.append(event)
 
-            debug_log(f"Found {len(events)} events")
-            debug_log(f"CSRF token: {csrf_token}")
+            # debug_log(f"Found {len(events)} events")
+            # debug_log(f"CSRF token: {csrf_token}")
 
         # Notify CheckOut API about the token update
         try:
@@ -202,13 +200,13 @@ def refresh_session_token(
                 "newtoken": new_token,
             }
 
-            debug_log(f"Update payload: {update_payload}")
+            # debug_log(f"Update payload: {update_payload}")
 
             response = client.post("update", update_payload)
             changed_rows = response.get("result", {}).get("changedRows", 0)
 
-            debug_log(f"Token update response: {response}")
-            debug_log(f"Rows updated: {changed_rows}")
+            # debug_log(f"Token update response: {response}")
+            # debug_log(f"Rows updated: {changed_rows}")
 
             if changed_rows == 0:
                 debug_log("Token update successful but no rows changed")
@@ -223,10 +221,8 @@ def refresh_session_token(
 
         except CheckOutAPIError as e:
             debug_log(f"Error notifying token update: {str(e)}")
-            if e.status_code:
-                debug_log(f"Status code: {e.status_code}")
-            if e.response_data:
-                debug_log(f"Response data: {e.response_data}")
+            # debug_log(f"Status code: {e.status_code}")
+            # debug_log(f"Response data: {e.response_data}")
             # Continue even if update notification fails, as we still want to use the new token
 
         debug_log("Session refresh successful")
@@ -237,8 +233,8 @@ def refresh_session_token(
         return new_token
 
     except Exception as e:
-        debug_log(f"Error during session refresh: {str(e)}")
-        log(email, "Fail", f"Session refresh fail - {str(e)}")
+        # debug_log(f"Error during session refresh: {str(e)}")
+        debug_log("Error during session refresh")
         return None
 
 

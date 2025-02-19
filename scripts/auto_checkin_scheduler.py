@@ -100,8 +100,8 @@ async def start_autocheckin_cycle() -> None:
     Updates the next scheduled run time in global state for monitoring.
     """
     debug_log("\nStarting auto checkin scheduler")
-    debug_log(f"Initial delay: {INITIAL_DELAY_SECONDS} seconds")
-    debug_log(f"Run initial cycle: {RUN_INITIAL_CYCLE}")
+    # debug_log(f"Initial delay: {INITIAL_DELAY_SECONDS} seconds")
+    # debug_log(f"Run initial cycle: {RUN_INITIAL_CYCLE}")
 
     await asyncio.sleep(INITIAL_DELAY_SECONDS)
 
@@ -117,8 +117,8 @@ async def start_autocheckin_cycle() -> None:
         next_run_seconds = next_run_ms
         next_run_time = datetime.now(timezone.utc) + timedelta(seconds=next_run_seconds)
         state.set_data("next_cycle_run_time", next_run_time.isoformat())
-        debug_log(f"Waiting {next_run_seconds:.2f} seconds before first cycle")
-        debug_log(f"Next run scheduled for: {next_run_time.isoformat()}")
+        # debug_log(f"Waiting {next_run_seconds:.2f} seconds before first cycle")
+        # debug_log(f"Next run scheduled for: {next_run_time.isoformat()}")
         await asyncio.sleep(next_run_seconds)
 
     while True:
@@ -135,7 +135,7 @@ async def start_autocheckin_cycle() -> None:
             delay_ms = random.randint(MIN_USER_DELAY_MS, int(MAX_USER_DELAY_MS))
             delay_sec = delay_ms / 1000
 
-            debug_log(f"Waiting {delay_sec:.2f} seconds before processing next user")
+            # debug_log(f"Waiting {delay_sec:.2f} seconds before processing next user")
             await asyncio.sleep(delay_sec)
 
             await run_autocheckin(user)
@@ -152,10 +152,8 @@ async def start_autocheckin_cycle() -> None:
         next_run_time = datetime.now(timezone.utc) + timedelta(seconds=next_run_seconds)
         state.set_data("next_cycle_run_time", next_run_time.isoformat())
 
-        debug_log(
-            f"Cycle complete. Waiting {next_run_seconds:.2f} seconds before next cycle"
-        )
-        debug_log(f"Next run scheduled for: {next_run_time.isoformat()}")
+        # debug_log(f"Cycle complete. Waiting {next_run_seconds:.2f} seconds before next cycle")
+        # debug_log(f"Next run scheduled for: {next_run_time.isoformat()}")
         await asyncio.sleep(next_run_seconds)
 
 
@@ -171,7 +169,8 @@ async def start_scheduler() -> None:
     try:
         await start_autocheckin_cycle()
     except Exception as e:
-        debug_log(f"Error in auto checkin scheduler: {str(e)}")
+        # debug_log(f"Error in auto checkin scheduler: {str(e)}")
+        debug_log("Error in auto checkin scheduler")
         await start_scheduler()
 
 

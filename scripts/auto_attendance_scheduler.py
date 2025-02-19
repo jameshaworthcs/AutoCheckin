@@ -22,13 +22,14 @@ async def start_attendance_scheduler() -> None:
         try:
             fetch_all_users_attendance()
         except Exception as e:
-            debug_log(f"Error in initial attendance fetch cycle: {str(e)}")
+            # debug_log(f"Error in initial attendance fetch cycle: {str(e)}")
+            debug_log("Error in initial attendance fetch cycle")
 
     now = datetime.now()
     next_hour = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
     initial_delay = (next_hour - now).total_seconds()
 
-    debug_log(f"Next attendance fetch scheduled for: {next_hour.isoformat()}")
+    # debug_log(f"Next attendance fetch scheduled for: {next_hour.isoformat()}")
     await asyncio.sleep(initial_delay)
 
     while True:
@@ -36,10 +37,11 @@ async def start_attendance_scheduler() -> None:
             debug_log("Running attendance fetch cycle")
             fetch_all_users_attendance()
         except Exception as e:
-            debug_log(f"Error in attendance fetch scheduler: {str(e)}")
+            # debug_log(f"Error in attendance fetch scheduler: {str(e)}")
+            debug_log("Error in attendance fetch scheduler")
 
         next_run = datetime.now() + timedelta(hours=1)
-        debug_log(f"Next attendance fetch scheduled for: {next_run.isoformat()}")
+        # debug_log(f"Next attendance fetch scheduled for: {next_run.isoformat()}")
         await asyncio.sleep(3600)
 
 

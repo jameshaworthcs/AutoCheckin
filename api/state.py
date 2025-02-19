@@ -63,7 +63,7 @@ class GlobalState:
         debug_log(f"Setting state data for key: {key}")
         state[key] = value
         self._save_state(state)
-        debug_log(f"State data after update - {key}: {value}")
+        # debug_log(f"State data after update - {key}: {value}")
 
     def get_data(self, key: str) -> Any:
         return self._load_state().get(key)
@@ -71,10 +71,10 @@ class GlobalState:
     def dump_state(self) -> None:
         """Debug method to dump entire state"""
         state = self._load_state()
-        debug_log("\n=== CURRENT STATE DUMP ===")
-        for key, value in state.items():
-            debug_log(f"{key}: {value}")
-        debug_log("=========================\n")
+        # debug_log("\n=== CURRENT STATE DUMP ===")
+        # for key, value in state.items():
+        #     debug_log(f"{key}: {value}")
+        # debug_log("=========================\n")
 
 
 # Create a global instance

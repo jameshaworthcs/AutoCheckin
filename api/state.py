@@ -4,11 +4,14 @@ from typing import Dict, Any
 from .checkout_client import CheckOutClient
 from .utils import debug_log
 
-STATE_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'state.json')
+STATE_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "data", "state.json"
+)
+
 
 class GlobalState:
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(GlobalState, cls).__new__(cls)
@@ -24,25 +27,25 @@ class GlobalState:
             "last_individual_session_refresh": None,
             "next_cycle_run_time": None,
             "last_attendance_fetch_run": None,
-            "autoCheckinUsers": []
+            "autoCheckinUsers": [],
         }
-        
+
         # Create state file if it doesn't exist
         if not os.path.exists(STATE_FILE):
             os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
             self._save_state(self.default_state)
-        
+
     def _load_state(self) -> Dict[str, Any]:
         """Load state from JSON file"""
         try:
-            with open(STATE_FILE, 'r') as f:
+            with open(STATE_FILE, "r") as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             return self.default_state.copy()
 
     def _save_state(self, state: Dict[str, Any]) -> None:
         """Save state to JSON file"""
-        with open(STATE_FILE, 'w') as f:
+        with open(STATE_FILE, "w") as f:
             json.dump(state, f, indent=2)
 
     def set_connected(self, status: bool) -> None:
@@ -73,13 +76,16 @@ class GlobalState:
             debug_log(f"{key}: {value}")
         debug_log("=========================\n")
 
+
 # Create a global instance
 state = GlobalState()
+
 
 def test_connection() -> bool:
     """Test connection to the checkout API"""
     client = CheckOutClient()
     return client.test_connection()
+
 
 def fetch_and_update_state() -> bool:
     """
@@ -89,14 +95,17 @@ def fetch_and_update_state() -> bool:
         bool: True if successful, False if failed
     """
     from .fetch_users import fetch_users  # Import here to avoid circular imports
+
     success = fetch_users()
     if not success:
         state.set_connected(False)
     return success
 
+
 def connection_monitor() -> None:
     """Monitor connection status and fetch users periodically"""
     import time
+
     RETRY_INTERVAL = 60  # Retry every minute when disconnected
     UPDATE_INTERVAL = 3600  # Update every hour when connected
 

@@ -70,13 +70,12 @@ def fetch_attendance():
     try:
         fetch_all_users_attendance(force_run=True)
         return create_response(
-            message="Attendance fetch completed successfully",
-            data={"success": True}
+            message="Attendance fetch completed successfully", data={"success": True}
         )
     except Exception as e:
         return create_response(
             success=False,
             message="Attendance fetch failed",
             error=str(e),
-            status_code=500
+            status_code=500,
         )

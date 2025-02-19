@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from api.state import state
 from api.utils import get_utc_timestamp, debug_log
 from scripts.fetch_attendance import fetch_attendance_page
+from api.checkout_client import CheckOutClient
 
 
 def should_run_fetch() -> bool:
@@ -49,12 +50,24 @@ def update_user_attendance_data(
 
     user["sync"]["attendanceData"][year_str][week_str] = activities
 
+    # Send the updated sync data to the CheckOutAPI
+    client = CheckOutClient()
+    sync_data = {
+        "email": user["email"],
+        "sync": {"attendanceData": user["sync"]["attendanceData"]},
+    }
+    try:
+        client.post("update-sync", sync_data)
+        debug_log(f"Successfully synced attendance data for {user['email']}")
+    except Exception as e:
+        debug_log(f"Failed to sync attendance data: {str(e)}")
+
     return user
 
 
 def fetch_all_users_attendance(force_run: bool = False) -> None:
     """Fetch and update attendance data for all users in autoCheckinUsers.
-    
+
     Args:
         force_run (bool): If True, bypasses the should_run_fetch check. Defaults to False.
     """

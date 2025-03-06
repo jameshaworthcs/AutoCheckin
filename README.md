@@ -200,6 +200,28 @@ web: gunicorn main:app
     }
     ```
 
+- GET `/api/v1/fetch-attendance`
+  - Triggers an attendance fetch for all users
+  - Forces an immediate run of the attendance checker
+  - Response Format:
+    ```json
+    {
+        "success": true,
+        "message": "Attendance fetch completed successfully",
+        "data": {
+            "success": true
+        }
+    }
+    ```
+  - Error Response Format:
+    ```json
+    {
+        "success": false,
+        "message": "Attendance fetch failed",
+        "error": "Error description"
+    }
+    ```
+
 ### User Management Endpoints
 - GET `/api/v1/fetch-users`
   - Triggers a new fetch of users from the CheckOut API

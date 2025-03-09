@@ -267,6 +267,74 @@ web: gunicorn main:app
     }
     ```
 
+- GET `/api/v1/fetch-prior-attendance`
+  - Fetches attendance data for all weeks defined in the academic calendar
+  - Uses the weekCommencing dates to calculate ISO week numbers
+  - Required Query Parameters (one of the following):
+    - `email`: Email address of the user to fetch attendance for
+    - `fetchall`: Set to "true" to fetch for all users instead of a specific email
+  - Response Format:
+    ```json
+    {
+        "success": true,
+        "message": "Prior attendance fetch for user@example.com completed",
+        "data": {
+            "results": [
+                {
+                    "weekCommencing": "2024-09-16",
+                    "weekNumber": "F",
+                    "isoYear": 2024,
+                    "isoWeek": 38,
+                    "status": "success"
+                },
+                {
+                    "weekCommencing": "2024-09-23",
+                    "weekNumber": "1",
+                    "isoYear": 2024,
+                    "isoWeek": 39,
+                    "status": "success"
+                }
+            ],
+            "errors": [],
+            "totalWeeks": 38,
+            "successfulFetches": 38,
+            "failedFetches": 0
+        }
+    }
+    ```
+  - Error Response Format:
+    ```json
+    {
+        "success": false,
+        "message": "Prior attendance fetch failed",
+        "error": "Error description",
+        "status_code": 500
+    }
+    ```
+  - Partial Success Response (HTTP 207):
+    ```json
+    {
+        "success": false,
+        "message": "Prior attendance fetch for user@example.com completed",
+        "data": {
+            "results": [...],
+            "errors": [
+                {
+                    "weekCommencing": "2024-10-07",
+                    "weekNumber": "3",
+                    "isoYear": 2024,
+                    "isoWeek": 41,
+                    "error": "Error description"
+                }
+            ],
+            "totalWeeks": 38,
+            "successfulFetches": 37,
+            "failedFetches": 1
+        },
+        "status_code": 207
+    }
+    ```
+
 ### User Management Endpoints
 - GET `/api/v1/fetch-users`
   - Triggers a new fetch of users from the CheckOut API

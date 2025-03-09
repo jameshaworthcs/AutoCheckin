@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request
 from api.utils import create_response
 from scripts.session_refresh import (
     get_all_refresh_sessions,
@@ -6,7 +6,10 @@ from scripts.session_refresh import (
 )
 from api.fetch_users import fetch_users
 from scripts.code_submission import try_codes_for_all_users, get_codes
-from scripts.attendance_scheduler import fetch_all_users_attendance
+from scripts.attendance_scheduler import (
+    fetch_all_users_attendance,
+    fetch_user_attendance_by_email,
+)
 
 session_bp = Blueprint("session", __name__)
 
@@ -76,6 +79,42 @@ def fetch_attendance():
         return create_response(
             success=False,
             message="Attendance fetch failed",
+            error=str(e),
+            status_code=500,
+        )
+
+
+@session_bp.route("/fetch-attendance-by-user", methods=["GET"])
+def fetch_attendance_by_user():
+    """Trigger attendance fetch for a specific user by email"""
+    email = request.args.get("email")
+
+    if not email:
+        return create_response(
+            success=False,
+            message="Email parameter is required",
+            error="Missing email parameter",
+            status_code=400,
+        )
+
+    try:
+        success = fetch_user_attendance_by_email(email, force_run=True)
+        if success:
+            return create_response(
+                message=f"Attendance fetch for {email} completed successfully",
+                data={"success": True},
+            )
+        else:
+            return create_response(
+                success=False,
+                message=f"Attendance fetch for {email} failed",
+                error="User not found or fetch failed",
+                status_code=404,
+            )
+    except Exception as e:
+        return create_response(
+            success=False,
+            message=f"Attendance fetch for {email} failed",
             error=str(e),
             status_code=500,
         )

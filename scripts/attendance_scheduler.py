@@ -120,5 +120,74 @@ def fetch_all_users_attendance(force_run: bool = False) -> None:
     debug_log("Attendance fetch complete")
 
 
+def fetch_user_attendance_by_email(email: str, force_run: bool = False) -> bool:
+    """Fetch and update attendance data for a specific user by email.
+
+    Args:
+        email (str): The email of the user to fetch attendance for
+        force_run (bool): If True, bypasses the should_run_fetch check. Defaults to False.
+
+    Returns:
+        bool: True if the fetch was successful, False otherwise
+    """
+    debug_log(f"\nStarting attendance fetch for user: {email}")
+
+    if not force_run and not should_run_fetch():
+        debug_log("Skipping attendance fetch - last run was less than 24 hours ago")
+        return False
+
+    users = state.get_data("autoCheckinUsers") or []
+    debug_log(f"Found {len(users)} users")
+
+    current_year = datetime.now().year
+    current_week = datetime.now().isocalendar()[1]
+
+    user_found = False
+    updated_users = []
+
+    for user in users:
+        user_email = user.get("email")
+
+        if user_email != email:
+            updated_users.append(user)
+            continue
+
+        user_found = True
+        token = user.get("checkintoken")
+
+        if not token:
+            debug_log(f"Skipping user - missing token")
+            updated_users.append(user)
+            continue
+
+        debug_log(f"Fetching attendance for {email}")
+
+        _, activities = fetch_attendance_page(token, email, current_year, current_week)
+        if activities:
+            debug_log(f"Successfully fetched {len(activities)} activities")
+            user_copy = user.copy()
+            updated_user = update_user_attendance_data(
+                user_copy, current_year, current_week, activities
+            )
+            debug_log(f"Updated sync data for {email}")
+            updated_users.append(updated_user)
+        else:
+            debug_log(f"Failed to fetch activities")
+            updated_users.append(user)
+
+    if not user_found:
+        debug_log(f"User with email {email} not found")
+        return False
+
+    try:
+        state.set_data("autoCheckinUsers", updated_users)
+        state.set_data("last_attendance_fetch_run", get_utc_timestamp())
+        state.dump_state()
+        return True
+    except Exception as e:
+        debug_log(f"Error updating state: {str(e)}")
+        return False
+
+
 if __name__ == "__main__":
     fetch_all_users_attendance()

@@ -65,11 +65,15 @@ def update_user_attendance_data(
     return user
 
 
-def fetch_all_users_attendance(force_run: bool = False) -> None:
+def fetch_all_users_attendance(
+    force_run: bool = False, year: int = None, week: int = None
+) -> None:
     """Fetch and update attendance data for all users in autoCheckinUsers.
 
     Args:
         force_run (bool): If True, bypasses the should_run_fetch check. Defaults to False.
+        year (int, optional): Specific year to fetch attendance for. Defaults to current year.
+        week (int, optional): Specific week to fetch attendance for. Defaults to current week.
     """
     debug_log("\nStarting attendance fetch for all users")
     state.dump_state()
@@ -81,8 +85,11 @@ def fetch_all_users_attendance(force_run: bool = False) -> None:
     users = state.get_data("autoCheckinUsers") or []
     debug_log(f"Found {len(users)} users")
 
-    current_year = datetime.now().year
-    current_week = datetime.now().isocalendar()[1]
+    # Use provided year/week or default to current
+    current_year = year if year is not None else datetime.now().year
+    current_week = week if week is not None else datetime.now().isocalendar()[1]
+
+    debug_log(f"Fetching attendance for year {current_year}, week {current_week}")
 
     updated_users = []
     for user in users:
@@ -120,12 +127,16 @@ def fetch_all_users_attendance(force_run: bool = False) -> None:
     debug_log("Attendance fetch complete")
 
 
-def fetch_user_attendance_by_email(email: str, force_run: bool = False) -> bool:
+def fetch_user_attendance_by_email(
+    email: str, force_run: bool = False, year: int = None, week: int = None
+) -> bool:
     """Fetch and update attendance data for a specific user by email.
 
     Args:
         email (str): The email of the user to fetch attendance for
         force_run (bool): If True, bypasses the should_run_fetch check. Defaults to False.
+        year (int, optional): Specific year to fetch attendance for. Defaults to current year.
+        week (int, optional): Specific week to fetch attendance for. Defaults to current week.
 
     Returns:
         bool: True if the fetch was successful, False otherwise
@@ -139,8 +150,11 @@ def fetch_user_attendance_by_email(email: str, force_run: bool = False) -> bool:
     users = state.get_data("autoCheckinUsers") or []
     debug_log(f"Found {len(users)} users")
 
-    current_year = datetime.now().year
-    current_week = datetime.now().isocalendar()[1]
+    # Use provided year/week or default to current
+    current_year = year if year is not None else datetime.now().year
+    current_week = week if week is not None else datetime.now().isocalendar()[1]
+
+    debug_log(f"Fetching attendance for year {current_year}, week {current_week}")
 
     user_found = False
     updated_users = []

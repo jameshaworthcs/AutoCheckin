@@ -71,9 +71,29 @@ def get_available_codes():
 def fetch_attendance():
     """Trigger attendance fetch for all users"""
     try:
-        fetch_all_users_attendance(force_run=True)
+        # Get optional year and week parameters
+        year = request.args.get("year")
+        week = request.args.get("week")
+
+        # Convert to integers if provided
+        year = int(year) if year else None
+        week = int(week) if week else None
+
+        fetch_all_users_attendance(force_run=True, year=year, week=week)
+
+        # Include the year and week in the response message
+        message = "Attendance fetch completed successfully"
+        if year and week:
+            message = (
+                f"Attendance fetch for year {year}, week {week} completed successfully"
+            )
+        elif year:
+            message = f"Attendance fetch for year {year} completed successfully"
+        elif week:
+            message = f"Attendance fetch for week {week} completed successfully"
+
         return create_response(
-            message="Attendance fetch completed successfully", data={"success": True}
+            message=message, data={"success": True, "year": year, "week": week}
         )
     except Exception as e:
         return create_response(
@@ -98,11 +118,31 @@ def fetch_attendance_by_user():
         )
 
     try:
-        success = fetch_user_attendance_by_email(email, force_run=True)
+        # Get optional year and week parameters
+        year = request.args.get("year")
+        week = request.args.get("week")
+
+        # Convert to integers if provided
+        year = int(year) if year else None
+        week = int(week) if week else None
+
+        success = fetch_user_attendance_by_email(
+            email, force_run=True, year=year, week=week
+        )
+
         if success:
+            # Include the year and week in the response message
+            message = f"Attendance fetch for {email} completed successfully"
+            if year and week:
+                message = f"Attendance fetch for {email} for year {year}, week {week} completed successfully"
+            elif year:
+                message = f"Attendance fetch for {email} for year {year} completed successfully"
+            elif week:
+                message = f"Attendance fetch for {email} for week {week} completed successfully"
+
             return create_response(
-                message=f"Attendance fetch for {email} completed successfully",
-                data={"success": True},
+                message=message,
+                data={"success": True, "email": email, "year": year, "week": week},
             )
         else:
             return create_response(

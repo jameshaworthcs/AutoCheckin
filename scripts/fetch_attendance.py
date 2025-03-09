@@ -112,7 +112,7 @@ def fetch_attendance_page(
         # debug_log(f"Making request to {CHECKIN_URL}/attendance/{year}/{week}")
 
         response = requests.get(
-            f"{CHECKIN_URL}/attendance/{year}/{week}", headers=headers
+            f"{CHECKIN_URL}/attendance/{str(year)}/{str(week)}", headers=headers
         )
 
         # debug_log(f"Response status code: {response.status_code}")

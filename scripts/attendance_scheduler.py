@@ -36,7 +36,7 @@ def update_user_attendance_data(
     Returns:
         Dict[str, Any]: Updated user dictionary with new attendance data
     """
-    if "sync" not in user:
+    if "sync" not in user or user["sync"] is None:
         user["sync"] = {}
 
     if "attendanceData" not in user["sync"]:

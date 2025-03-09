@@ -213,13 +213,18 @@ web: gunicorn main:app
 - GET `/api/v1/fetch-attendance`
   - Triggers an attendance fetch for all users
   - Forces an immediate run of the attendance checker
+  - Optional Query Parameters:
+    - `year`: Specific academic year to fetch attendance for (e.g., 2023)
+    - `week`: Specific week number to fetch attendance for (e.g., 42)
   - Response Format:
     ```json
     {
         "success": true,
         "message": "Attendance fetch completed successfully",
         "data": {
-            "success": true
+            "success": true,
+            "year": 2023,
+            "week": 42
         }
     }
     ```
@@ -229,6 +234,36 @@ web: gunicorn main:app
         "success": false,
         "message": "Attendance fetch failed",
         "error": "Error description"
+    }
+    ```
+
+- GET `/api/v1/fetch-attendance-by-user`
+  - Triggers an attendance fetch for a specific user by email
+  - Required Query Parameters:
+    - `email`: Email address of the user to fetch attendance for
+  - Optional Query Parameters:
+    - `year`: Specific academic year to fetch attendance for (e.g., 2023)
+    - `week`: Specific week number to fetch attendance for (e.g., 42)
+  - Response Format:
+    ```json
+    {
+        "success": true,
+        "message": "Attendance fetch for user@example.com completed successfully",
+        "data": {
+            "success": true,
+            "email": "user@example.com",
+            "year": 2023,
+            "week": 42
+        }
+    }
+    ```
+  - Error Response Format:
+    ```json
+    {
+        "success": false,
+        "message": "Attendance fetch for user@example.com failed",
+        "error": "User not found or fetch failed",
+        "status_code": 404
     }
     ```
 

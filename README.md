@@ -96,6 +96,16 @@ The `/public` directory is used to serve static files without authentication. Th
 
 To serve a static file, simply place it in the `public` directory and access it at the root URL.
 
+## Connecting to the CheckOut API
+
+Ensure the `CHECKOUT_API_URL` is set in .env and you have 'autosysop' permissions with the `CHECKOUT_API_KEY` you're using.
+
+  Tip: When running AutoCheckin in WSL and CheckOut within Windows, run this command within wsl to find the IP address for your windows 'localhost':
+  ```bash
+  ip route show | grep -i default | awk '{ print $3}'
+  ```
+  This can often change on reboot, so will need to be updated if this is how you're developing.
+
 ## Development Server
 
 To run the development server:

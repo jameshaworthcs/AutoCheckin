@@ -6,6 +6,7 @@ A Flask-based REST API that provides a session handling and checkins for the Che
 - [Features](#features)
 - [AutoCheckin Process](#autocheckin-process)
 - [Setup](#setup)
+- [Running in Local Mode](#running-in-local-mode)
 - [Static Files](#static-files)
 - [Development Server](#development-server)
 - [Production Deployment](#production-deployment)
@@ -85,7 +86,40 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 ```
-Edit `.env` file with your specific configuration. Make sure to set the `CHECKOUT_API_KEY` for authentication testing.
+Edit `.env` file with your specific configuration. Make sure to set the `CHECKOUT_API_KEY` for authentication testing when running in standard mode.
+
+## Running in Local Mode
+
+This application supports a "Local Mode" designed for single-user operation without requiring the full CheckOut API backend for user management or code fetching. This is useful for development, testing, or simpler deployments where you only need to manage one user's check-in process.
+
+**How it Works:**
+
+*   **User Data:** Instead of fetching users from CheckOut, Local Mode stores the user's email, check-in token, and the URL to fetch codes from in a local `user.json` file.
+*   **Simplified Web UI:** When enabled, visiting the root URL (`/`) serves a simple Single Page Application (SPA) instead of the API information page. This SPA allows you to:
+    *   Configure your email, token, and the specific URL suffix for fetching check-in codes.
+    *   Manually trigger a code submission attempt.
+    *   View logs of session refreshes and code submission attempts.
+*   **Local Code Fetching:** A background task reads the `codes_url` from `user.json` and periodically fetches potential check-in codes directly from that source.
+*   **Direct Check-in:** Code submission attempts (`/api/v1/local/submit` or via the Manual Submit button) use the stored credentials and fetched codes to interact directly with the official Check-in system (`CHECKIN_URL`).
+
+**Enabling Local Mode:**
+
+1.  Open your `.env` file.
+2.  Add or modify the following line:
+    ```dotenv
+    AUTOCHECKIN_LOCAL=true
+    ```
+3.  **Set the Base URL:** You also need to provide the base URL for the system where your check-in codes can be fetched. Set this using:
+    ```dotenv
+    # Example: If codes are at http://my-checkout-instance.local/api/app/active/yrk/cs/2
+    LOCAL_CHECKOUT_API_URL=http://my-checkout-instance.local
+    ```
+    The SPA will combine this base URL with the suffix you configure in the UI to create the full `codes_url` stored in `user.json`.
+4.  Restart the application (`python main.py`).
+
+Now, accessing `http://localhost:5000` (or your configured host/port) will load the Local Mode SPA.
+
+**Note:** When `AUTOCHECKIN_LOCAL` is `false` or not set, the application runs in its standard multi-user mode, interacting with the CheckOut API defined by `CHECKOUT_API_URL` and `CHECKOUT_API_KEY`.
 
 ## Static Files
 

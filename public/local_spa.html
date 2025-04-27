@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheckin - Local Mode</title>
+    <link rel="stylesheet" href="local_styles.css">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
+
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                 <img src="/favicon.svg" alt="AutoCheckin Logo" width="30" height="30">
+                 <h1>AutoCheckin</h1>
+                 <span>Local Mode</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#account" class="nav-link active" data-section="account">Account</a></li>
+                    <li><a href="#submit" class="nav-link" data-section="submit">Manual Submit</a></li>
+                    <li><a href="#logs" class="nav-link" data-section="logs">Logs</a></li>
+                    <li><a href="#timetable" class="nav-link" data-section="timetable">Timetable</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main class="content">
+            <section id="account" class="content-section active">
+                <h2>Account Configuration</h2>
+                <div id="config-warning-placeholder" style="display: none;"></div>
+                <p>Manage your local user details and API settings.</p>
+                <form id="account-form" action="/save-local-user" method="POST">
+                    <div class="form-group">
+                        <label for="email">Email Address:</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="token">Checkin Token:</label>
+                        <input type="password" id="token" name="token" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="codes_suffix">Codes URL Suffix:</label>
+                        <div class="url-input-group">
+                            <span class="url-base" id="checkout-api-url-display"></span>
+                            <input type="text" id="codes_suffix" name="codes_suffix" required>
+                        </div>
+                         <div class="url-preview">
+                            <span>Full URL: <code id="full-codes-url"></code></span>
+                            <a href="#" id="preview-link" target="_blank" rel="noopener noreferrer">Preview</a>
+                        </div>
+                        <p class="form-hint">
+                            The base URL is set via the <code>LOCAL_CHECKOUT_API_URL</code> environment variable in <code>.env</code>.
+                        </p>
+                    </div>
+                    <button type="submit" class="btn">Save Configuration</button>
+                </form>
+            </section>
+
+            <section id="status" class="content-section">
+                <h2>Status</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="status-label">Last Session Refresh:</span>
+                        <span class="status-value" id="last-session-refresh">N/A</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Last Code Attempt:</span>
+                        <span class="status-value" id="last-code-attempt">N/A</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Untried Codes Available:</span>
+                        <span class="status-value" id="untried-codes-count">N/A</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="submit" class="content-section">
+                <h2>Manual Code Submission</h2>
+                <p>Trigger a manual check-in attempt using the configured details.</p>
+                <button id="manual-submit-btn" class="btn">Run Manual Submit</button>
+                <div id="submit-status" class="status-output"></div>
+                <!-- Results will be displayed here -->
+            </section>
+
+            <section id="logs" class="content-section">
+                <h2>Logs</h2>
+                <div id="logs-content">
+                    <!-- Logs will be loaded here by JavaScript -->
+                </div>
+            </section>
+
+            <section id="timetable" class="content-section">
+                <h2>Timetable / Events</h2>
+                <p>View current event schedule (coming soon).</p>
+                <!-- Timetable data will be displayed here -->
+            </section>
+        </main>
+    </div>
+
+    <script src="local_app.js"></script>
+</body>
+</html> 

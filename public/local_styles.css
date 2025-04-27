@@ -1,0 +1,316 @@
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --background-color: #f8f9fa;
+    --sidebar-background: #343a40;
+    --sidebar-text-color: #f8f9fa;
+    --sidebar-active-background: #495057;
+    --content-background: #ffffff;
+    --border-color: #dee2e6;
+    --text-color: #212529;
+    --input-border-color: #ced4da;
+    --input-background-color: #ffffff;
+    --input-focus-border-color: #80bdff;
+    --button-hover-color: #0056b3;
+    --code-background: #e9ecef;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    height: 100vh;
+    overflow: hidden; /* Prevent body scroll */
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: var(--sidebar-background);
+    color: var(--sidebar-text-color);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--sidebar-active-background);
+}
+
+.logo img {
+    /* Styles for logo image if needed */
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.logo span {
+    font-size: 0.8em;
+    color: var(--secondary-color);
+    background-color: var(--sidebar-active-background);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav ul li a {
+    display: block;
+    padding: 10px 15px;
+    color: var(--sidebar-text-color);
+    text-decoration: none;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    transition: background-color 0.2s ease;
+}
+
+nav ul li a:hover {
+    background-color: var(--sidebar-active-background);
+}
+
+nav ul li a.active {
+    background-color: var(--primary-color);
+    font-weight: bold;
+}
+
+/* Style for disabled nav links */
+.nav-link.disabled {
+    color: var(--secondary-color) !important; /* Use important to override base color */
+    cursor: not-allowed;
+    pointer-events: none; /* Prevent clicks */
+    opacity: 0.6;
+}
+
+.nav-link.disabled:hover {
+    background-color: transparent !important; /* Prevent hover effect */
+}
+
+.content {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: var(--content-background);
+    overflow-y: auto; /* Allow content area to scroll */
+    height: 100vh; /* Ensure it takes full height for overflow */
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+.content-section {
+    display: none; /* Hidden by default */
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.content-section.active {
+    display: block; /* Show active section */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--input-border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: var(--input-background-color);
+    color: var(--text-color);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    border-color: var(--input-focus-border-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.url-input-group {
+    display: flex;
+}
+
+.url-base {
+    padding: 0.75rem;
+    background-color: var(--code-background);
+    border: 1px solid var(--input-border-color);
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    white-space: nowrap;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: var(--secondary-color);
+}
+
+.url-input-group input[type="text"] {
+    border-radius: 0 4px 4px 0;
+    flex-grow: 1;
+}
+
+.url-preview {
+    margin-top: 0.5rem;
+    font-size: 0.9em;
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.url-preview code {
+    background-color: var(--code-background);
+    padding: 2px 5px;
+    border-radius: 3px;
+    word-break: break-all;
+}
+
+.url-preview a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.url-preview a:hover {
+    text-decoration: underline;
+}
+
+.form-hint {
+    font-size: 0.85em;
+    color: var(--secondary-color);
+    margin-top: 0.5rem;
+}
+
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    color: #fff;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 4px;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    text-decoration: none; /* For potential <a> buttons */
+}
+
+.btn:hover {
+    background-color: var(--button-hover-color);
+    border-color: var(--button-hover-color);
+    color: #fff;
+}
+
+.status-output {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--code-background);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    min-height: 50px;
+    white-space: pre-wrap; /* Preserve whitespace and line breaks */
+    font-family: monospace;
+}
+
+/* Utility */
+code {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: var(--primary-color);
+}
+
+/* Warning Message Style */
+.config-warning {
+    background-color: #fff3cd; /* Light yellow */
+    color: #856404; /* Dark yellow/brown text */
+    border: 1px solid #ffeeba; /* Yellow border */
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: 4px;
+}
+
+.config-warning strong {
+    color: #664d03;
+}
+
+/* Success Message Style (similar to warning, but green) */
+.config-success {
+    background-color: #d1e7dd; /* Light green */
+    color: #0f5132; /* Dark green text */
+    border: 1px solid #badbcc; /* Green border */
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: 4px;
+}
+
+.config-success strong {
+    color: #0a3622;
+}
+
+/* Status Section Styles */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.status-item {
+    background-color: var(--background-color);
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.status-label {
+    display: block;
+    font-weight: bold;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+    font-size: 0.9em;
+}
+
+.status-value {
+    font-size: 1.1em;
+    word-wrap: break-word;
+} 

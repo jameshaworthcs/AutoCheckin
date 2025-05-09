@@ -1,5 +1,8 @@
 # <div align="center">AutoCheckin <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jameshaworthcs/AutoCheckin/refs/heads/main/public/favicon-white.svg" width="25" height="25"><img src="https://raw.githubusercontent.com/jameshaworthcs/AutoCheckin/refs/heads/main/public/favicon.svg" width="25" height="25" alt="AutoCheckin Logo"></picture></div>
 
+> [!IMPORTANT]  
+> AutoCheckin is no longer actively maintained. To contribute to this repository, please fork it. This project is licensed under the MIT License.
+
 A Flask-based REST API that provides a session handling and checkins for the CheckOut AutoCheckin system.
 
 ## Table of Contents
